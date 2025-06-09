@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { Contract, parseEther } from "ethers";
+// import { Contract, parseEther } from "ethers";
 
 /**
  * Deploys a contract named "YourContract" using the deployer account and
@@ -24,6 +24,7 @@ const deploySe2Token: DeployFunction = async function (hre: HardhatRuntimeEnviro
 
   await deploy("SE2Token", {
     from: deployer,
+    args: ["0x2807c1121F550d9Fb543164cFa24fD08bD93Aabe"],
     log: true,
     // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
     // automatically mining the contract deployment transaction. There is no effect on live networks.
