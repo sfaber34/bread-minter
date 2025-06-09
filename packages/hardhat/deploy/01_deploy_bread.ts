@@ -8,7 +8,7 @@ import { DeployFunction } from "hardhat-deploy/types";
  *
  * @param hre HardhatRuntimeEnvironment object.
  */
-const deploySe2Token: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployBread: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   /*
     On localhost, the deployer account is the one that comes with Hardhat, which is already funded.
 
@@ -22,7 +22,7 @@ const deploySe2Token: DeployFunction = async function (hre: HardhatRuntimeEnviro
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
 
-  await deploy("SE2Token", {
+  await deploy("Bread", {
     from: deployer,
     args: ["0x2807c1121F550d9Fb543164cFa24fD08bD93Aabe"],
     log: true,
@@ -32,8 +32,8 @@ const deploySe2Token: DeployFunction = async function (hre: HardhatRuntimeEnviro
   });
 };
 
-export default deploySe2Token;
+export default deployBread;
 
 // Tags are useful if you have multiple deploy files and only want to run one of them.
 // e.g. yarn deploy --tags SE2Token
-deploySe2Token.tags = ["SE2Token"];
+deployBread.tags = ["Bread"];

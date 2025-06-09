@@ -14,17 +14,17 @@ const ERC20: NextPage = () => {
   const [amount, setAmount] = useState<string>("");
 
   const { data: balance } = useScaffoldReadContract({
-    contractName: "SE2Token",
+    contractName: "Bread",
     functionName: "balanceOf",
     args: [connectedAddress],
   });
 
   const { data: totalSupply } = useScaffoldReadContract({
-    contractName: "SE2Token",
+    contractName: "Bread",
     functionName: "totalSupply",
   });
 
-  const { writeContractAsync: writeSE2TokenAsync } = useScaffoldWriteContract("SE2Token");
+  const { writeContractAsync: writeBreadAsync } = useScaffoldWriteContract("Bread");
 
   return (
     <>
@@ -92,7 +92,7 @@ const ERC20: NextPage = () => {
               className="btn btn-accent text-lg px-12 mt-2"
               onClick={async () => {
                 try {
-                  await writeSE2TokenAsync({ functionName: "mint", args: [connectedAddress, parseEther("100")] });
+                  await writeBreadAsync({ functionName: "mint", args: [connectedAddress, parseEther("100")] });
                 } catch (e) {
                   console.error("Error while minting token", e);
                 }
@@ -136,7 +136,7 @@ const ERC20: NextPage = () => {
                 disabled={!toAddress || !amount}
                 onClick={async () => {
                   try {
-                    await writeSE2TokenAsync({ functionName: "transfer", args: [toAddress, parseEther(amount)] });
+                    await writeBreadAsync({ functionName: "transfer", args: [toAddress, parseEther(amount)] });
                     setToAddress("");
                     setAmount("");
                   } catch (e) {
