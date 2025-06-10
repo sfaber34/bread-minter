@@ -2,14 +2,20 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Bread is ERC20 {
+contract Bread is ERC20, Ownable {
     event Mint(address indexed user, uint256 amount);
 
     address public rpcBreadMinterAddress;
 
-    constructor(address rpcBreadMinterAddress_) ERC20("Bread", "BRD") {
+    constructor(address rpcBreadMinterAddress_) ERC20("Bread", "BRD") Ownable(msg.sender) {
         rpcBreadMinterAddress = rpcBreadMinterAddress_;
+        _mint(msg.sender, 100000 * 10 ** 18);
+    }
+
+    function setRpcBreadMinterAddress(address newAddress) public onlyOwner {
+        rpcBreadMinterAddress = newAddress;
     }
 
     modifier onlyRpcBreadMinter() {
