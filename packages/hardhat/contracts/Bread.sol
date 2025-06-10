@@ -19,6 +19,7 @@ contract Bread is ERC20 {
 
     function mint(address to, uint256 amount) public onlyRpc {
         _mint(to, amount);
+        emit Mint(to, amount);
     }
 
     function batchMint(address[] calldata addresses, uint256[] calldata amounts) public onlyRpc {
