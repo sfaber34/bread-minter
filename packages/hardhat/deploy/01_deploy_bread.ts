@@ -24,7 +24,7 @@ const deployBread: DeployFunction = async function (hre: HardhatRuntimeEnvironme
 
   await deploy("Bread", {
     from: deployer,
-    args: ["0x2807c1121F550d9Fb543164cFa24fD08bD93Aabe"],
+    args: ["0xaC9A4652dF3878d24f35A6a6c022544aeE9748Ff"],
     log: true,
     // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
     // automatically mining the contract deployment transaction. There is no effect on live networks.
