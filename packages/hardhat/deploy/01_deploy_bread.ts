@@ -3,8 +3,8 @@ import { DeployFunction } from "hardhat-deploy/types";
 // import { Contract, parseEther } from "ethers";
 
 /**
- * Deploys a contract named "YourContract" using the deployer account and
- * constructor arguments set to the deployer address
+ * Deploys a contract named "Bread" using the deployer account and
+ * constructor arguments set to the rpcBreadMinterAddress
  *
  * @param hre HardhatRuntimeEnvironment object.
  */
@@ -12,7 +12,7 @@ const deployBread: DeployFunction = async function (hre: HardhatRuntimeEnvironme
   /*
     On localhost, the deployer account is the one that comes with Hardhat, which is already funded.
 
-    When deploying to live networks (e.g `yarn deploy --network sepolia`), the deployer account
+    When deploying to live networks (e.g `yarn deploy --network baseSepolia`), the deployer account
     should have sufficient balance to pay for the gas fees for contract creation.
 
     You can generate a random account with `yarn generate` which will fill DEPLOYER_PRIVATE_KEY
@@ -22,18 +22,23 @@ const deployBread: DeployFunction = async function (hre: HardhatRuntimeEnvironme
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
 
+  console.log("Deploying Bread contract with deployer:", deployer);
+
+  // Deploy with the specified deployer address as the rpcBreadMinterAddress
   await deploy("Bread", {
     from: deployer,
-    args: ["0xaC9A4652dF3878d24f35A6a6c022544aeE9748Ff"],
+    args: ["0xaC9A4652dF3878d24f35A6a6c022544aeE9748Ff"], // rpcBreadMinterAddress
     log: true,
     // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
     // automatically mining the contract deployment transaction. There is no effect on live networks.
     autoMine: true,
   });
+
+  console.log("Bread contract deployed successfully!");
 };
 
 export default deployBread;
 
 // Tags are useful if you have multiple deploy files and only want to run one of them.
-// e.g. yarn deploy --tags SE2Token
+// e.g. yarn deploy --tags Bread
 deployBread.tags = ["Bread"];

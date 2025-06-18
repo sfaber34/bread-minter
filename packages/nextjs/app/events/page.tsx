@@ -11,6 +11,13 @@ const EventsPage = () => {
     watch: true,
   });
 
+  const { data: penaltyBurnEvents, isLoading: isPenaltyBurnLoading } = useScaffoldEventHistory({
+    contractName: "Bread",
+    eventName: "PenaltyBurn",
+    fromBlock: 0n,
+    watch: true,
+  });
+
   const { data: debugTimeEvents, isLoading: isDebugTimeLoading } = useScaffoldEventHistory({
     contractName: "Bread",
     eventName: "DebugTime",
@@ -47,10 +54,84 @@ const EventsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {mintEvents.map((event, index) => (
+                {mintEvents.map((event, index) => {
+                  // Debug logging
+                  console.log("Mint event:", event);
+                  console.log("Event args:", event.args);
+
+                  return (
+                    <tr key={index}>
+                      <td className="font-mono">
+                        {(event.args as any)?.user || (event.args as any)?.[0] || "Unknown"}
+                      </td>
+                      <td>
+                        {(event.args as any)?.amount
+                          ? formatEther((event.args as any).amount)
+                          : (event.args as any)?.[1]
+                            ? formatEther((event.args as any)[1])
+                            : "0"}{" "}
+                        BRD
+                      </td>
+                      <td>{event.blockNumber?.toString() ?? "Unknown"}</td>
+                      <td className="font-mono">
+                        {event.transactionHash ? (
+                          <a
+                            href={`/blockexplorer/tx/${event.transactionHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="link link-primary"
+                          >
+                            {event.transactionHash.slice(0, 8)}...{event.transactionHash.slice(-6)}
+                          </a>
+                        ) : (
+                          "Unknown"
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center">
+            <p className="text-xl">No mint events found</p>
+          </div>
+        )}
+      </div>
+
+      <div className="w-full mb-12">
+        <h2 className="text-2xl font-bold mb-4">Penalty Burn Events</h2>
+        {isPenaltyBurnLoading ? (
+          <div className="flex justify-center items-center">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        ) : penaltyBurnEvents && penaltyBurnEvents.length > 0 ? (
+          <div className="w-full overflow-x-auto">
+            <table className="table w-full">
+              <thead>
+                <tr>
+                  <th>Target</th>
+                  <th>Amount Burned</th>
+                  <th>Block Number</th>
+                  <th>Transaction Hash</th>
+                </tr>
+              </thead>
+              <tbody>
+                {penaltyBurnEvents.map((event, index) => (
                   <tr key={index}>
-                    <td className="font-mono">{event.args?.user || "Unknown"}</td>
-                    <td>{event.args?.amount ? formatEther(event.args.amount) : "0"} BRD</td>
+                    <td className="font-mono">
+                      {(event.args as any)?.target || (event.args as any)?.[0] || "Unknown"}
+                    </td>
+                    <td className="text-red-600 font-bold">
+                      -
+                      {(event.args as any)?.amount
+                        ? formatEther((event.args as any).amount)
+                        : (event.args as any)?.[1]
+                          ? formatEther((event.args as any)[1])
+                          : "0"}{" "}
+                      BRD
+                    </td>
                     <td>{event.blockNumber?.toString() ?? "Unknown"}</td>
                     <td className="font-mono">
                       {event.transactionHash ? (
@@ -73,7 +154,7 @@ const EventsPage = () => {
           </div>
         ) : (
           <div className="text-center">
-            <p className="text-xl">No mint events found</p>
+            <p className="text-xl">No penalty burn events found</p>
           </div>
         )}
       </div>

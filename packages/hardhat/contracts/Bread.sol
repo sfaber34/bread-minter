@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Bread is ERC20, Ownable {
     event Mint(address indexed user, uint256 amount);
+    event PenaltyBurn(address indexed target, uint256 amount);
     event MintLimitUpdated(uint256 newLimit);
     event CooldownUpdated(uint256 newCooldown);
     event DebugTime(address indexed user, uint256 currentTime, uint256 lastMintTime, uint256 cooldown);
@@ -13,15 +14,12 @@ contract Bread is ERC20, Ownable {
 
     address public rpcBreadMinterAddress;
     uint256 public mintLimit = 100 * 10**18; // 100 Bread with 18 decimals
-    uint256 public mintCooldown = 1 minutes;
+    uint256 public mintCooldown = 10 minutes;
 
     mapping(address => uint256) public lastMintTime;
     mapping(address => uint256) public mintedInPeriod;
 
-    constructor(address rpcBreadMinterAddress_) 
-        ERC20("Bread", "BRD") 
-        Ownable(msg.sender) 
-    {
+    constructor(address rpcBreadMinterAddress_) ERC20("Bread", "BRD") Ownable(msg.sender) {
         rpcBreadMinterAddress = rpcBreadMinterAddress_;
         _mint(msg.sender, 100000 * 10 ** 18);
     }
@@ -124,6 +122,19 @@ contract Bread is ERC20, Ownable {
             _checkRateLimit(addresses[i], amounts[i]);
             _mint(addresses[i], amounts[i]);
             emit Mint(addresses[i], amounts[i]);
+        }
+    }
+
+    function batchBurn(address[] calldata addresses, uint256[] calldata amounts) public onlyRpcBreadMinter {
+        require(addresses.length == amounts.length, "Address and amount arrays must be the same length");
+        require(addresses.length > 0, "Arrays cannot be empty");
+        require(addresses.length <= 100, "Maximum batch size is 100"); // Prevent gas issues with large arrays
+
+        for (uint256 i = 0; i < addresses.length; i++) {
+            require(addresses[i] != address(0), "Cannot burn from zero address");
+            require(amounts[i] > 0, "Amount must be greater than 0");
+            _burn(addresses[i], amounts[i]);
+            emit PenaltyBurn(addresses[i], amounts[i]);
         }
     }
 }
