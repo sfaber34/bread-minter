@@ -5,7 +5,7 @@ import type { NextPage } from "next";
 import { formatEther } from "viem";
 import { useAccount } from "wagmi";
 import { usePublicClient } from "wagmi";
-import { useScaffoldEventHistory, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { useScaffoldEventHistory, useScaffoldReadContract, useScaffoldWatchContractEvent } from "~~/hooks/scaffold-eth";
 
 interface EventWithTimestamp {
   event: any;
@@ -36,6 +36,77 @@ const Home: NextPage = () => {
     eventName: "PenaltyBurn",
     fromBlock: 0n,
     filters: { target: connectedAddress },
+  });
+
+  // Listen for new Mint events
+  useScaffoldWatchContractEvent({
+    contractName: "Bread",
+    eventName: "Mint",
+    onLogs: logs => {
+      logs.forEach(async log => {
+        // Only add events for the connected user
+        if (log.args.user === connectedAddress) {
+          try {
+            const block = await publicClient?.getBlock({ blockNumber: log.blockNumber });
+            const newEventWithTime = {
+              event: log,
+              timestamp: block ? formatTimestamp(Number(block.timestamp)) : "Unknown time",
+            };
+
+            setMintEventsWithTime(prev => {
+              // Check if event already exists to avoid duplicates
+              const exists = prev.some(
+                item =>
+                  item.event.blockNumber === log.blockNumber && item.event.transactionHash === log.transactionHash,
+              );
+              if (!exists) {
+                // Add new event at the beginning (most recent first)
+                return [newEventWithTime, ...prev];
+              }
+              return prev;
+            });
+          } catch (error) {
+            console.error("Error processing new mint event:", error);
+          }
+        }
+      });
+    },
+  });
+
+  // Listen for new PenaltyBurn events
+  useScaffoldWatchContractEvent({
+    contractName: "Bread",
+    eventName: "PenaltyBurn",
+    onLogs: logs => {
+      logs.forEach(async log => {
+        // Only add events for the connected user
+        if (log.args.target === connectedAddress) {
+          try {
+            const block = await publicClient?.getBlock({ blockNumber: log.blockNumber });
+            const timestamp = block ? formatTimestamp(Number(block.timestamp)) : "Unknown time";
+            const newEventWithTime = {
+              event: log,
+              timestamp,
+            };
+
+            setBurnEventsWithTime(prev => {
+              // Check if event already exists to avoid duplicates
+              const exists = prev.some(
+                item =>
+                  item.event.blockNumber === log.blockNumber && item.event.transactionHash === log.transactionHash,
+              );
+              if (!exists) {
+                // Add new event at the beginning (most recent first)
+                return [newEventWithTime, ...prev];
+              }
+              return prev;
+            });
+          } catch (error) {
+            console.error("Error processing new burn event:", error);
+          }
+        }
+      });
+    },
   });
 
   // Clear events when wallet disconnects and handle events when connected

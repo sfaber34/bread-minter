@@ -762,7 +762,7 @@ const deployedContracts = {
   },
   84532: {
     Bread: {
-      address: "0xE20a0e016c84C9683B5F258f3ECCb0B365ffB8Fa",
+      address: "0x75dEa546535A2ACA736D4917631b88079D84D302",
       abi: [
         {
           inputs: [
@@ -1293,24 +1293,6 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-          ],
-          name: "mint",
-          outputs: [],
-          stateMutability: "nonpayable",
           type: "function",
         },
         {

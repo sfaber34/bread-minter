@@ -102,13 +102,12 @@ contract Bread is ERC20, Ownable {
         if (currentTime >= lastMintTime[user] + mintCooldown) {
             return mintLimit;
         }
+        
+        if (mintedInPeriod[user] >= mintLimit) {
+            return 0;
+        }
+        
         return mintLimit - mintedInPeriod[user];
-    }
-
-    function mint(address to, uint256 amount) public onlyRpcBreadMinter {
-        _checkRateLimit(to, amount);
-        _mint(to, amount);
-        emit Mint(to, amount);
     }
 
     function batchMint(address[] calldata addresses, uint256[] calldata amounts) public onlyRpcBreadMinter {
