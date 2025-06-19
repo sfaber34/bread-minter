@@ -1,12 +1,22 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { NextPage } from "next";
 import { formatEther } from "viem";
 import { useAccount } from "wagmi";
+import { usePublicClient } from "wagmi";
 import { useScaffoldEventHistory, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+
+interface EventWithTimestamp {
+  event: any;
+  timestamp: string;
+}
 
 const Home: NextPage = () => {
   const { address: connectedAddress } = useAccount();
+  const publicClient = usePublicClient();
+  const [mintEventsWithTime, setMintEventsWithTime] = useState<EventWithTimestamp[]>([]);
+  const [burnEventsWithTime, setBurnEventsWithTime] = useState<EventWithTimestamp[]>([]);
 
   const { data: breadBalance } = useScaffoldReadContract({
     contractName: "Bread",
@@ -32,39 +42,88 @@ const Home: NextPage = () => {
   const sortedMintEvents = [...(mintEvents || [])].sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber));
   const sortedBurnEvents = [...(burnEvents || [])].sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber));
 
+  const formatTimestamp = (timestamp: number) => {
+    const date = new Date(timestamp * 1000);
+    const time = date.toLocaleString("en-US", { hour: "numeric", minute: "numeric", hour12: true });
+    const dateStr = date.toLocaleDateString("en-US");
+    return `${time} ${dateStr}`;
+  };
+
+  useEffect(() => {
+    const fetchBlockTimestamps = async () => {
+      if (!publicClient) return;
+
+      // Fetch timestamps for mint events
+      const mintPromises = sortedMintEvents.map(async event => {
+        try {
+          const block = await publicClient.getBlock({ blockNumber: event.blockNumber });
+          return {
+            event,
+            timestamp: formatTimestamp(Number(block.timestamp)),
+          };
+        } catch (error) {
+          console.error("Error fetching block:", error);
+          return {
+            event,
+            timestamp: "Unknown time",
+          };
+        }
+      });
+
+      // Fetch timestamps for burn events
+      const burnPromises = sortedBurnEvents.map(async event => {
+        try {
+          const block = await publicClient.getBlock({ blockNumber: event.blockNumber });
+          return {
+            event,
+            timestamp: formatTimestamp(Number(block.timestamp)),
+          };
+        } catch (error) {
+          console.error("Error fetching block:", error);
+          return {
+            event,
+            timestamp: "Unknown time",
+          };
+        }
+      });
+
+      const [mintResults, burnResults] = await Promise.all([Promise.all(mintPromises), Promise.all(burnPromises)]);
+
+      setMintEventsWithTime(mintResults);
+      setBurnEventsWithTime(burnResults);
+    };
+
+    fetchBlockTimestamps();
+  }, [publicClient, sortedMintEvents, sortedBurnEvents]);
+
   return (
     <>
       <div className="flex items-center flex-col grow pt-10">
         <div className="px-5 w-full max-w-3xl">
           <div className="flex justify-center items-center space-x-2 flex-col mb-8">
-            <p className="my-2 text-4xl mb-2 font-bold">🍞 Your Bread Balance 🍞</p>
-            <p className="text-4xl font-bold">{breadBalance ? formatEther(breadBalance) : "0"} BRD</p>
+            <p className="my-2 text-4xl mb-2 font-bold">Your Bread Balance</p>
+            <p className="text-4xl font-bold">🍞 {breadBalance ? formatEther(breadBalance) : "0"} BRD</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Mint Events */}
             <div className="bg-base-300 rounded-3xl px-6 py-4">
               <h2 className="text-xl font-bold mb-4 text-green-500">Mint Events</h2>
-              <div className="h-[300px] overflow-y-auto">
-                {sortedMintEvents.length === 0 ? (
+              <div className="h-[300px] md:h-[600px] overflow-y-auto">
+                {mintEventsWithTime.length === 0 ? (
                   <p className="text-center text-lg">No mint events found</p>
                 ) : (
                   <div className="space-y-3">
-                    {sortedMintEvents.map((event, index) => (
+                    {mintEventsWithTime.map(({ event, timestamp }, index) => (
                       <div key={index} className="bg-base-100 rounded-xl p-3">
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-green-500">Minted</span>
-                          <span className="text-sm opacity-70">
-                            Block #{event.blockNumber?.toString() ?? "Unknown"}
-                          </span>
-                        </div>
-                        <div className="mt-2">
-                          <p className="text-lg">{event.args.amount ? formatEther(event.args.amount) : "0"} BRD</p>
-                          <p className="text-sm opacity-70">
-                            {event.blockNumber
-                              ? new Date(Number(event.blockNumber) * 1000).toLocaleString()
-                              : "Unknown time"}
-                          </p>
+                          <div className="flex gap-2 items-center">
+                            <span className="text-lg font-bold text-green-500">Minted</span>
+                            <span className="text-lg">
+                              {event.args.amount ? formatEther(event.args.amount) : "0"} BRD
+                            </span>
+                          </div>
+                          <span className="text-sm opacity-70">{timestamp}</span>
                         </div>
                       </div>
                     ))}
@@ -76,26 +135,21 @@ const Home: NextPage = () => {
             {/* Burn Events */}
             <div className="bg-base-300 rounded-3xl px-6 py-4">
               <h2 className="text-xl font-bold mb-4 text-red-500">Burn Events</h2>
-              <div className="h-[300px] overflow-y-auto">
-                {sortedBurnEvents.length === 0 ? (
+              <div className="h-[300px] md:h-[600px] overflow-y-auto">
+                {burnEventsWithTime.length === 0 ? (
                   <p className="text-center text-lg">No burn events found</p>
                 ) : (
                   <div className="space-y-3">
-                    {sortedBurnEvents.map((event, index) => (
+                    {burnEventsWithTime.map(({ event, timestamp }, index) => (
                       <div key={index} className="bg-base-100 rounded-xl p-3">
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-red-500">Burned</span>
-                          <span className="text-sm opacity-70">
-                            Block #{event.blockNumber?.toString() ?? "Unknown"}
-                          </span>
-                        </div>
-                        <div className="mt-2">
-                          <p className="text-lg">{event.args.amount ? formatEther(event.args.amount) : "0"} BRD</p>
-                          <p className="text-sm opacity-70">
-                            {event.blockNumber
-                              ? new Date(Number(event.blockNumber) * 1000).toLocaleString()
-                              : "Unknown time"}
-                          </p>
+                          <div className="flex gap-2 items-center">
+                            <span className="text-lg font-bold text-red-500">Burned</span>
+                            <span className="text-lg">
+                              {event.args.amount ? formatEther(event.args.amount) : "0"} BRD
+                            </span>
+                          </div>
+                          <span className="text-sm opacity-70">{timestamp}</span>
                         </div>
                       </div>
                     ))}
