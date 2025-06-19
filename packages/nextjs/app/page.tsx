@@ -38,20 +38,25 @@ const Home: NextPage = () => {
     filters: { target: connectedAddress },
   });
 
-  // Sort events by block number (most recent first)
-  const sortedMintEvents = [...(mintEvents || [])].sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber));
-  const sortedBurnEvents = [...(burnEvents || [])].sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber));
-
-  const formatTimestamp = (timestamp: number) => {
-    const date = new Date(timestamp * 1000);
-    const time = date.toLocaleString("en-US", { hour: "numeric", minute: "numeric", hour12: true });
-    const dateStr = date.toLocaleDateString("en-US");
-    return `${time} ${dateStr}`;
-  };
-
+  // Clear events when wallet disconnects and handle events when connected
   useEffect(() => {
+    if (!connectedAddress) {
+      setMintEventsWithTime([]);
+      setBurnEventsWithTime([]);
+      return;
+    }
+
+    // Only process events if we have a connected address and events exist
+    if (!mintEvents && !burnEvents) {
+      return;
+    }
+
     const fetchBlockTimestamps = async () => {
       if (!publicClient) return;
+
+      // Sort events by block number (most recent first)
+      const sortedMintEvents = [...(mintEvents || [])].sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber));
+      const sortedBurnEvents = [...(burnEvents || [])].sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber));
 
       // Fetch timestamps for mint events
       const mintPromises = sortedMintEvents.map(async event => {
@@ -94,7 +99,14 @@ const Home: NextPage = () => {
     };
 
     fetchBlockTimestamps();
-  }, [publicClient, sortedMintEvents, sortedBurnEvents]);
+  }, [connectedAddress, mintEvents, burnEvents, publicClient]);
+
+  const formatTimestamp = (timestamp: number) => {
+    const date = new Date(timestamp * 1000);
+    const time = date.toLocaleString("en-US", { hour: "numeric", minute: "numeric", hour12: true });
+    const dateStr = date.toLocaleDateString("en-US");
+    return `${time} ${dateStr}`;
+  };
 
   return (
     <>
