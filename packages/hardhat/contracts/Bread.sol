@@ -10,7 +10,7 @@ contract Bread is ERC20, Ownable {
     event MintLimitUpdated(uint256 newLimit);
     event CooldownUpdated(uint256 newCooldown);
     event DebugTime(address indexed user, uint256 currentTime, uint256 lastMintTime, uint256 cooldown);
-    event DebugCooldown(address indexed user, uint256 currentTime, uint256 lastMintTime, uint256 timeSinceLastMint, uint256 remainingCooldown);
+    // event DebugCooldown(address indexed user, uint256 currentTime, uint256 lastMintTime, uint256 timeSinceLastMint, uint256 remainingCooldown);
 
     address public rpcBreadMinterAddress;
     uint256 public mintLimit = 100 * 10**18; // 100 Bread with 18 decimals
@@ -74,20 +74,20 @@ contract Bread is ERC20, Ownable {
         return mintCooldown - timeSinceLastMint;
     }
 
-    function debugCooldown(address user) public returns (uint256) {
-        uint256 currentTime = block.timestamp;
-        uint256 timeSinceLastMint = currentTime - lastMintTime[user];
-        uint256 remaining;
-        
-        if (timeSinceLastMint >= mintCooldown) {
-            remaining = 0;
-        } else {
-            remaining = mintCooldown - timeSinceLastMint;
-        }
-        
-        emit DebugCooldown(user, currentTime, lastMintTime[user], timeSinceLastMint, remaining);
-        return remaining;
-    }
+    // function debugCooldown(address user) public returns (uint256) {
+    //     uint256 currentTime = block.timestamp;
+    //     uint256 timeSinceLastMint = currentTime - lastMintTime[user];
+    //     uint256 remaining;
+    //     
+    //     if (timeSinceLastMint >= mintCooldown) {
+    //         remaining = 0;
+    //     } else {
+    //         remaining = mintCooldown - timeSinceLastMint;
+    //     }
+    //     
+    //     emit DebugCooldown(user, currentTime, lastMintTime[user], timeSinceLastMint, remaining);
+    //     return remaining;
+    // }
 
     function getMintedInPeriod(address user) public view returns (uint256) {
         uint256 currentTime = block.timestamp;

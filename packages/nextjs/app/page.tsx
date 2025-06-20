@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import axios from "axios";
 import type { NextPage } from "next";
 import { formatEther } from "viem";
-import { useAccount } from "wagmi";
+import { mainnet } from "viem/chains";
+import { useAccount, useEnsName } from "wagmi";
 import { usePublicClient } from "wagmi";
 import { useScaffoldEventHistory, useScaffoldReadContract, useScaffoldWatchContractEvent } from "~~/hooks/scaffold-eth";
 
@@ -14,9 +16,18 @@ interface EventWithTimestamp {
 
 const Home: NextPage = () => {
   const { address: connectedAddress } = useAccount();
+  const {
+    data: ensName,
+    isLoading: ensLoading,
+    error: ensError,
+  } = useEnsName({
+    address: connectedAddress,
+    chainId: mainnet.id,
+  });
   const publicClient = usePublicClient();
   const [mintEventsWithTime, setMintEventsWithTime] = useState<EventWithTimestamp[]>([]);
   const [burnEventsWithTime, setBurnEventsWithTime] = useState<EventWithTimestamp[]>([]);
+  const [pendingBread, setPendingBread] = useState<number | null>(null);
 
   const { data: breadBalance } = useScaffoldReadContract({
     contractName: "Bread",
@@ -172,6 +183,48 @@ const Home: NextPage = () => {
     fetchBlockTimestamps();
   }, [connectedAddress, mintEvents, burnEvents, publicClient]);
 
+  // Set up interval to fetch pending bread every 5 seconds
+  // Note: ENS resolution happens automatically via useEnsName hook and only when address changes
+  useEffect(() => {
+    if (!connectedAddress) {
+      setPendingBread(null);
+      return;
+    }
+
+    // Fetch pending bread amount from API
+    const fetchPendingBread = async (address: string, ensName?: string | null) => {
+      try {
+        // Use ENS name if available, otherwise use address
+        const queryParam = ensName || address;
+        console.log("Fetching pending bread for:", queryParam, "(ENS:", ensName, "Address:", address, ")");
+        console.log("ENS Loading:", ensLoading, "ENS Error:", ensError);
+        const response = await axios.get(`https://stage.rpc.buidlguidl.com:48546/yourpendingbread?owner=${queryParam}`);
+        console.log("API Response:", response.data);
+        console.log("API Response bread value:", response.data.bread, "Type:", typeof response.data.bread);
+        // Ensure we return a number or null
+        return typeof response.data.bread === "number" ? response.data.bread : null;
+      } catch (error) {
+        console.error(`Error fetching pending bread: ${error}`);
+        console.error("Full error:", error);
+        return null;
+      }
+    };
+
+    // Function to fetch with current ENS name or address
+    const fetchWithCurrentParams = () => {
+      fetchPendingBread(connectedAddress, ensName).then(setPendingBread);
+    };
+
+    // Fetch immediately
+    fetchWithCurrentParams();
+
+    // Set up interval for every 5 seconds (only fetches pending bread, ENS is cached)
+    const interval = setInterval(fetchWithCurrentParams, 5000);
+
+    // Cleanup interval on unmount or address change
+    return () => clearInterval(interval);
+  }, [connectedAddress, ensName, ensLoading, ensError]); // Restart when address changes or ENS resolves
+
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
     const time = date.toLocaleString("en-US", { hour: "numeric", minute: "numeric", hour12: true });
@@ -186,6 +239,15 @@ const Home: NextPage = () => {
           <div className="flex justify-center items-center space-x-2 flex-col mb-8">
             <p className="my-2 text-4xl mb-2 font-bold">Your Bread Balance</p>
             <p className="text-4xl font-bold">🍞 {breadBalance ? formatEther(breadBalance) : "0"} BRD</p>
+            {pendingBread !== null && <p className="text-2xl font-semibold">👨‍🍳 Pending: {pendingBread} BRD</p>}
+            {/* Temporary debugging info */}
+            <div className="text-sm text-gray-500 mt-2">
+              <p>Debug - Address: {connectedAddress}</p>
+              <p>Debug - ENS: {ensName || "None"}</p>
+              <p>Debug - ENS Loading: {ensLoading ? "Yes" : "No"}</p>
+              <p>Debug - ENS Error: {ensError ? ensError.message : "None"}</p>
+              <p>Debug - Pending Raw: {pendingBread !== null ? pendingBread : "null"}</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
