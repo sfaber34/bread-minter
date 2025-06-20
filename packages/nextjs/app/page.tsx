@@ -240,14 +240,6 @@ const Home: NextPage = () => {
             <p className="my-2 text-4xl mb-2 font-bold">Your Bread Balance</p>
             <p className="text-4xl font-bold">🍞 {breadBalance ? formatEther(breadBalance) : "0"} BRD</p>
             {pendingBread !== null && <p className="text-2xl font-semibold">👨‍🍳 Pending: {pendingBread} BRD</p>}
-            {/* Temporary debugging info */}
-            <div className="text-sm text-gray-500 mt-2">
-              <p>Debug - Address: {connectedAddress}</p>
-              <p>Debug - ENS: {ensName || "None"}</p>
-              <p>Debug - ENS Loading: {ensLoading ? "Yes" : "No"}</p>
-              <p>Debug - ENS Error: {ensError ? ensError.message : "None"}</p>
-              <p>Debug - Pending Raw: {pendingBread !== null ? pendingBread : "null"}</p>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
