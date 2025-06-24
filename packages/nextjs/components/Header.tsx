@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { hardhat } from "viem/chains";
-import { Bars3Icon, BugAntIcon } from "@heroicons/react/24/outline";
+import { useAccount } from "wagmi";
+import { Bars3Icon, BugAntIcon, KeyIcon } from "@heroicons/react/24/outline";
 import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
-import { useOutsideClick, useTargetNetwork } from "~~/hooks/scaffold-eth";
+import { useOutsideClick, useScaffoldReadContract, useTargetNetwork } from "~~/hooks/scaffold-eth";
 
 type HeaderMenuLink = {
   label: string;
@@ -15,7 +16,7 @@ type HeaderMenuLink = {
   icon?: React.ReactNode;
 };
 
-export const menuLinks: HeaderMenuLink[] = [
+const baseMenuLinks: HeaderMenuLink[] = [
   {
     label: "Home",
     href: "/",
@@ -32,8 +33,31 @@ export const menuLinks: HeaderMenuLink[] = [
   },
 ];
 
+const ownerMenuLink: HeaderMenuLink = {
+  label: "Owner",
+  href: "/owner",
+  icon: <KeyIcon className="h-4 w-4" />,
+};
+
 export const HeaderMenuLinks = () => {
   const pathname = usePathname();
+  const { address: connectedAddress } = useAccount();
+
+  // Read the contract owner from the Bread contract
+  const { data: contractOwner } = useScaffoldReadContract({
+    contractName: "Bread",
+    functionName: "owner",
+  });
+
+  // Check if connected user is the contract owner
+  const isOwner = useMemo(() => {
+    return connectedAddress && contractOwner && connectedAddress.toLowerCase() === contractOwner.toLowerCase();
+  }, [connectedAddress, contractOwner]);
+
+  // Conditionally include owner link
+  const menuLinks = useMemo(() => {
+    return isOwner ? [...baseMenuLinks, ownerMenuLink] : baseMenuLinks;
+  }, [isOwner]);
 
   return (
     <>
