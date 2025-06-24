@@ -237,8 +237,9 @@ const Home: NextPage = () => {
       <div className="flex items-center flex-col grow pt-10">
         <div className="px-5 w-full max-w-3xl">
           <div className="flex justify-center items-center space-x-2 flex-col mb-8">
-            <p className="my-2 text-4xl mb-2 font-bold">Your Bread Balance</p>
-            <p className="text-4xl font-bold">🍞 {breadBalance ? formatEther(breadBalance) : "0"} BRD</p>
+            <p className="my-2 text-4xl mb-0 font-bold">
+              🍞 Bread Balance: {breadBalance ? formatEther(breadBalance) : "0"} BRD
+            </p>
             {pendingBread !== null && <p className="text-2xl font-semibold">👨‍🍳 Pending: {pendingBread} BRD</p>}
           </div>
 
