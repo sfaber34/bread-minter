@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     Bread: {
-      address: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
       abi: [
         {
           inputs: [
@@ -190,43 +190,6 @@ const deployedContracts = {
             {
               indexed: false,
               internalType: "uint256",
-              name: "timeSinceLastMint",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "remainingCooldown",
-              type: "uint256",
-            },
-          ],
-          name: "DebugCooldown",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "address",
-              name: "user",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "currentTime",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "lastMintTime",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
               name: "cooldown",
               type: "uint256",
             },
@@ -283,6 +246,25 @@ const deployedContracts = {
             },
           ],
           name: "OwnershipTransferred",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "target",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          name: "PenaltyBurn",
           type: "event",
         },
         {
@@ -390,7 +372,7 @@ const deployedContracts = {
               type: "uint256[]",
             },
           ],
-          name: "batchMint",
+          name: "batchBurn",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -398,19 +380,18 @@ const deployedContracts = {
         {
           inputs: [
             {
-              internalType: "address",
-              name: "user",
-              type: "address",
+              internalType: "address[]",
+              name: "addresses",
+              type: "address[]",
             },
-          ],
-          name: "debugCooldown",
-          outputs: [
             {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
+              internalType: "uint256[]",
+              name: "amounts",
+              type: "uint256[]",
             },
           ],
+          name: "batchMint",
+          outputs: [],
           stateMutability: "nonpayable",
           type: "function",
         },
@@ -501,24 +482,6 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-          ],
-          name: "mint",
-          outputs: [],
-          stateMutability: "nonpayable",
           type: "function",
         },
         {
