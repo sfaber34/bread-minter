@@ -3,12 +3,12 @@ import { DeployFunction } from "hardhat-deploy/types";
 // import { Contract, parseEther } from "ethers";
 
 /**
- * Deploys a contract named "Bread" using the deployer account and
+ * Deploys a contract named "BuidlGuidlBread" using the deployer account and
  * constructor arguments set to the rpcBreadMinterAddress
  *
  * @param hre HardhatRuntimeEnvironment object.
  */
-const deployBread: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployBuidlGuidlBread: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   /*
     On localhost, the deployer account is the one that comes with Hardhat, which is already funded.
 
@@ -22,10 +22,10 @@ const deployBread: DeployFunction = async function (hre: HardhatRuntimeEnvironme
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
 
-  console.log("Deploying Bread contract with deployer:", deployer);
+  console.log("Deploying BuidlGuidlBread contract with deployer:", deployer);
 
   // Deploy with the specified deployer address as the rpcBreadMinterAddress
-  await deploy("Bread", {
+  await deploy("BuidlGuidlBread", {
     from: deployer,
     args: ["0xaC9A4652dF3878d24f35A6a6c022544aeE9748Ff"], // rpcBreadMinterAddress
     log: true,
@@ -34,11 +34,11 @@ const deployBread: DeployFunction = async function (hre: HardhatRuntimeEnvironme
     autoMine: true,
   });
 
-  console.log("Bread contract deployed successfully!");
+  console.log("BuidlGuidlBread contract deployed successfully!");
 };
 
-export default deployBread;
+export default deployBuidlGuidlBread;
 
 // Tags are useful if you have multiple deploy files and only want to run one of them.
-// e.g. yarn deploy --tags Bread
-deployBread.tags = ["Bread"];
+// e.g. yarn deploy --tags BuidlGuidlBread
+deployBuidlGuidlBread.tags = ["BuidlGuidlBread"];

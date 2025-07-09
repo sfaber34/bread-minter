@@ -30,20 +30,20 @@ const Home: NextPage = () => {
   const [pendingBread, setPendingBread] = useState<number | null>(null);
 
   const { data: breadBalance } = useScaffoldReadContract({
-    contractName: "Bread",
+    contractName: "BuidlGuidlBread",
     functionName: "balanceOf",
     args: [connectedAddress],
   });
 
   const { data: mintEvents } = useScaffoldEventHistory({
-    contractName: "Bread",
+    contractName: "BuidlGuidlBread",
     eventName: "Mint",
     fromBlock: 0n,
     filters: { user: connectedAddress },
   });
 
   const { data: burnEvents } = useScaffoldEventHistory({
-    contractName: "Bread",
+    contractName: "BuidlGuidlBread",
     eventName: "PenaltyBurn",
     fromBlock: 0n,
     filters: { target: connectedAddress },
@@ -51,7 +51,7 @@ const Home: NextPage = () => {
 
   // Listen for new Mint events
   useScaffoldWatchContractEvent({
-    contractName: "Bread",
+    contractName: "BuidlGuidlBread",
     eventName: "Mint",
     onLogs: logs => {
       logs.forEach(async log => {
@@ -86,7 +86,7 @@ const Home: NextPage = () => {
 
   // Listen for new PenaltyBurn events
   useScaffoldWatchContractEvent({
-    contractName: "Bread",
+    contractName: "BuidlGuidlBread",
     eventName: "PenaltyBurn",
     onLogs: logs => {
       logs.forEach(async log => {
@@ -240,10 +240,10 @@ const Home: NextPage = () => {
             <div className="my-2 text-4xl mb-0 font-bold flex flex-col sm:flex-row sm:items-center sm:justify-center sm:space-x-2">
               <span>🍞 Bread Balance:</span>
               <span className="text-center sm:text-left">
-                {breadBalance ? Number(formatEther(breadBalance)).toLocaleString() : "0"} BRD
+                {breadBalance ? Number(formatEther(breadBalance)).toLocaleString() : "0"} BGBRD
               </span>
             </div>
-            {pendingBread !== null && <p className="text-2xl font-semibold">👨‍🍳 Pending: {pendingBread} BRD</p>}
+            {pendingBread !== null && <p className="text-2xl font-semibold">👨‍🍳 Pending: {pendingBread} BGBRD</p>}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -261,7 +261,7 @@ const Home: NextPage = () => {
                           <div className="flex gap-2 items-center">
                             <span className="text-lg font-bold text-green-500">Minted</span>
                             <span className="text-lg">
-                              {event.args.amount ? formatEther(event.args.amount) : "0"} BRD
+                              {event.args.amount ? formatEther(event.args.amount) : "0"} BGBRD
                             </span>
                           </div>
                           <span className="text-sm opacity-70">{timestamp}</span>
@@ -287,7 +287,7 @@ const Home: NextPage = () => {
                           <div className="flex gap-2 items-center">
                             <span className="text-lg font-bold text-red-500">Burned</span>
                             <span className="text-lg">
-                              {event.args.amount ? formatEther(event.args.amount) : "0"} BRD
+                              {event.args.amount ? formatEther(event.args.amount) : "0"} BGBRD
                             </span>
                           </div>
                           <span className="text-sm opacity-70">{timestamp}</span>

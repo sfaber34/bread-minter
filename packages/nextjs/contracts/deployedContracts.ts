@@ -6,7 +6,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 const deployedContracts = {
   31337: {
-    Bread: {
+    BuidlGuidlBread: {
       address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
       abi: [
         {
@@ -164,37 +164,6 @@ const deployedContracts = {
             },
           ],
           name: "CooldownUpdated",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "address",
-              name: "user",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "currentTime",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "lastMintTime",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "cooldown",
-              type: "uint256",
-            },
-          ],
-          name: "DebugTime",
           type: "event",
         },
         {
