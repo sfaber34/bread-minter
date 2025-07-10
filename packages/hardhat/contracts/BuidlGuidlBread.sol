@@ -4,36 +4,45 @@ pragma solidity >=0.8.0 <0.9.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Bread is ERC20, Ownable {
+contract BuidlGuidlBread is ERC20, Ownable {
     event Mint(address indexed user, uint256 amount);
     event PenaltyBurn(address indexed target, uint256 amount);
     event MintLimitUpdated(uint256 newLimit);
     event CooldownUpdated(uint256 newCooldown);
-    event DebugTime(address indexed user, uint256 currentTime, uint256 lastMintTime, uint256 cooldown);
-    // event DebugCooldown(address indexed user, uint256 currentTime, uint256 lastMintTime, uint256 timeSinceLastMint, uint256 remainingCooldown);
 
     address public rpcBreadMinterAddress;
-    uint256 public mintLimit = 100 * 10**18; // 100 Bread with 18 decimals
-    uint256 public mintCooldown = 10 minutes;
+    uint256 public mintLimit = 168 * 10**18; // 168 Bread with 18 decimals
+    uint256 public mintCooldown = 24 hours;
 
     mapping(address => uint256) public lastMintTime;
     mapping(address => uint256) public mintedInPeriod;
 
-    constructor(address rpcBreadMinterAddress_) ERC20("Bread", "BRD") Ownable(msg.sender) {
+    /// @param rpcBreadMinterAddress_ The address authorized to perform batch mint/burn operations
+    /// @dev Mints 100,000 tokens to the contract deployer and sets the initial minter address
+    constructor(address rpcBreadMinterAddress_) ERC20("BuidlGuidl Bread", "BGBRD") Ownable(msg.sender) {
         rpcBreadMinterAddress = rpcBreadMinterAddress_;
         _mint(msg.sender, 100000 * 10 ** 18);
     }
 
+    /// @notice Updates the RPC Bread Minter address
+    /// @param newAddress The new address that will be authorized to perform batch operations
+    /// @dev Only the contract owner can call this function
     function setRpcBreadMinterAddress(address newAddress) public onlyOwner {
         rpcBreadMinterAddress = newAddress;
     }
 
+    /// @notice Sets the maximum amount that can be minted per cooldown period
+    /// @param newLimit The new mint limit in wei (with 18 decimals)
+    /// @dev Only the contract owner can call this function. Limit must be greater than 0
     function setMintLimit(uint256 newLimit) public onlyOwner {
         require(newLimit > 0, "Mint limit must be greater than 0");
         mintLimit = newLimit;
         emit MintLimitUpdated(newLimit);
     }
 
+    /// @notice Sets the cooldown period between mint limit resets
+    /// @param newCooldown The new cooldown period in seconds
+    /// @dev Only the contract owner can call this function. Cooldown must be greater than 0
     function setMintCooldown(uint256 newCooldown) public onlyOwner {
         require(newCooldown > 0, "Cooldown must be greater than 0");
         mintCooldown = newCooldown;
@@ -45,6 +54,10 @@ contract Bread is ERC20, Ownable {
         _;
     }
 
+    /// @dev Internal function to check and enforce rate limiting for token minting
+    /// @param to The address receiving the tokens
+    /// @param amount The amount of tokens being minted
+    /// @notice Resets the minted amount if cooldown period has passed, otherwise checks limits
     function _checkRateLimit(address to, uint256 amount) internal {
         uint256 currentTime = block.timestamp;
         
@@ -59,10 +72,11 @@ contract Bread is ERC20, Ownable {
         // Update the tracking
         lastMintTime[to] = currentTime;
         mintedInPeriod[to] += amount;
-        
-        emit DebugTime(to, currentTime, lastMintTime[to], mintCooldown);
     }
 
+    /// @notice Returns the remaining cooldown time for a user before they can mint again
+    /// @param user The address to check cooldown for
+    /// @return The number of seconds remaining in the cooldown period (0 if cooldown has passed)
     function getRemainingCooldown(address user) public view returns (uint256) {
         uint256 currentTime = block.timestamp;
         uint256 timeSinceLastMint = currentTime - lastMintTime[user];
@@ -74,21 +88,9 @@ contract Bread is ERC20, Ownable {
         return mintCooldown - timeSinceLastMint;
     }
 
-    // function debugCooldown(address user) public returns (uint256) {
-    //     uint256 currentTime = block.timestamp;
-    //     uint256 timeSinceLastMint = currentTime - lastMintTime[user];
-    //     uint256 remaining;
-    //     
-    //     if (timeSinceLastMint >= mintCooldown) {
-    //         remaining = 0;
-    //     } else {
-    //         remaining = mintCooldown - timeSinceLastMint;
-    //     }
-    //     
-    //     emit DebugCooldown(user, currentTime, lastMintTime[user], timeSinceLastMint, remaining);
-    //     return remaining;
-    // }
-
+    /// @notice Returns the amount of tokens minted by a user in the current period
+    /// @param user The address to check minted amount for
+    /// @return The amount of tokens minted in the current cooldown period (0 if period has reset)
     function getMintedInPeriod(address user) public view returns (uint256) {
         uint256 currentTime = block.timestamp;
         if (currentTime >= lastMintTime[user] + mintCooldown) {
@@ -97,6 +99,9 @@ contract Bread is ERC20, Ownable {
         return mintedInPeriod[user];
     }
 
+    /// @notice Returns the remaining amount that can be minted by a user in the current period
+    /// @param user The address to check remaining mint amount for
+    /// @return The amount of tokens that can still be minted (full limit if period has reset)
     function getRemainingMintAmount(address user) public view returns (uint256) {
         uint256 currentTime = block.timestamp;
         if (currentTime >= lastMintTime[user] + mintCooldown) {
@@ -110,6 +115,12 @@ contract Bread is ERC20, Ownable {
         return mintLimit - mintedInPeriod[user];
     }
 
+    /// @notice Mints tokens to multiple addresses in a single transaction
+    /// @param addresses Array of recipient addresses
+    /// @param amounts Array of amounts to mint (must match addresses array length)
+    /// @dev Only the authorized RPC Bread Minter can call this function
+    /// @dev Enforces rate limiting for each recipient and validates all inputs
+    /// @dev Maximum batch size is 100 to prevent gas issues
     function batchMint(address[] calldata addresses, uint256[] calldata amounts) public onlyRpcBreadMinter {
         require(addresses.length == amounts.length, "Address and amount arrays must be the same length");
         require(addresses.length > 0, "Arrays cannot be empty");
@@ -124,6 +135,12 @@ contract Bread is ERC20, Ownable {
         }
     }
 
+    /// @notice Burns tokens from multiple addresses in a single transaction
+    /// @param addresses Array of addresses to burn tokens from
+    /// @param amounts Array of amounts to burn (must match addresses array length)
+    /// @dev Only the authorized RPC Bread Minter can call this function
+    /// @dev Used for penalty burns or other administrative token removal
+    /// @dev Maximum batch size is 100 to prevent gas issues
     function batchBurn(address[] calldata addresses, uint256[] calldata amounts) public onlyRpcBreadMinter {
         require(addresses.length == amounts.length, "Address and amount arrays must be the same length");
         require(addresses.length > 0, "Arrays cannot be empty");
@@ -136,4 +153,4 @@ contract Bread is ERC20, Ownable {
             emit PenaltyBurn(addresses[i], amounts[i]);
         }
     }
-}
+} 
