@@ -26,7 +26,7 @@ describe("BuidlGuidlBread Contract", function () {
     it("Should set the correct initial values", async function () {
       const { buidlGuidlBread, owner, rpcBreadMinter } = await loadFixture(deployBuidlGuidlBreadFixture);
 
-      expect(await buidlGuidlBread.name()).to.equal("Buidl Guidl Bread");
+      expect(await buidlGuidlBread.name()).to.equal("BuidlGuidl Bread");
       expect(await buidlGuidlBread.symbol()).to.equal("BGBRD");
       expect(await buidlGuidlBread.decimals()).to.equal(18);
       expect(await buidlGuidlBread.owner()).to.equal(owner.address);

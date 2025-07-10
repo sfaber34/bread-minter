@@ -19,7 +19,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
 
     /// @param rpcBreadMinterAddress_ The address authorized to perform batch mint/burn operations
     /// @dev Mints 100,000 tokens to the contract deployer and sets the initial minter address
-    constructor(address rpcBreadMinterAddress_) ERC20("Buidl Guidl Bread", "BGBRD") Ownable(msg.sender) {
+    constructor(address rpcBreadMinterAddress_) ERC20("BuidlGuidl Bread", "BGBRD") Ownable(msg.sender) {
         rpcBreadMinterAddress = rpcBreadMinterAddress_;
         _mint(msg.sender, 100000 * 10 ** 18);
     }
