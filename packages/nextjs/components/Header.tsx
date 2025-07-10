@@ -45,7 +45,7 @@ export const HeaderMenuLinks = () => {
 
   // Read the contract owner from the Bread contract
   const { data: contractOwner } = useScaffoldReadContract({
-    contractName: "Bread",
+    contractName: "BuidlGuidlBread",
     functionName: "owner",
   });
 
