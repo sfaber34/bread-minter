@@ -198,7 +198,9 @@ const Home: NextPage = () => {
         const queryParam = ensName || address;
         console.log("Fetching pending bread for:", queryParam, "(ENS:", ensName, "Address:", address, ")");
         console.log("ENS Loading:", ensLoading, "ENS Error:", ensError);
-        const response = await axios.get(`https://stage.rpc.buidlguidl.com:48546/yourpendingbread?owner=${queryParam}`);
+        const response = await axios.get(
+          `https://pool.mainnet.rpc.buidlguidl.com:48546/yourpendingbread?owner=${queryParam}`,
+        );
         console.log("API Response:", response.data);
         console.log("API Response bread value:", response.data.bread, "Type:", typeof response.data.bread);
         // Ensure we return a number or null
