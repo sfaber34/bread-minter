@@ -6,15 +6,16 @@ import { parseEther } from "ethers";
 describe("BuidlGuidlBread Contract", function () {
   // Fixture for deploying the contract
   async function deployBuidlGuidlBreadFixture() {
-    const [owner, rpcBreadMinter, user1, user2, user3, unauthorized] = await ethers.getSigners();
+    const [owner, rpcBreadMinter, pauseAddress, user1, user2, user3, unauthorized] = await ethers.getSigners();
 
     const BuidlGuidlBreadFactory = await ethers.getContractFactory("BuidlGuidlBread");
-    const buidlGuidlBread = await BuidlGuidlBreadFactory.deploy(rpcBreadMinter.address);
+    const buidlGuidlBread = await BuidlGuidlBreadFactory.deploy(rpcBreadMinter.address, pauseAddress.address);
 
     return {
       buidlGuidlBread,
       owner,
       rpcBreadMinter,
+      pauseAddress,
       user1,
       user2,
       user3,
@@ -24,28 +25,36 @@ describe("BuidlGuidlBread Contract", function () {
 
   describe("Deployment", function () {
     it("Should set the correct initial values", async function () {
-      const { buidlGuidlBread, owner, rpcBreadMinter } = await loadFixture(deployBuidlGuidlBreadFixture);
+      const { buidlGuidlBread, owner, rpcBreadMinter, pauseAddress } = await loadFixture(deployBuidlGuidlBreadFixture);
 
       expect(await buidlGuidlBread.name()).to.equal("BuidlGuidl Bread");
       expect(await buidlGuidlBread.symbol()).to.equal("BGBRD");
       expect(await buidlGuidlBread.decimals()).to.equal(18);
       expect(await buidlGuidlBread.owner()).to.equal(owner.address);
       expect(await buidlGuidlBread.rpcBreadMinterAddress()).to.equal(rpcBreadMinter.address);
+      expect(await buidlGuidlBread.pauseAddress()).to.equal(pauseAddress.address);
       expect(await buidlGuidlBread.mintLimit()).to.equal(parseEther("168"));
       expect(await buidlGuidlBread.mintCooldown()).to.equal(86400); // 24 hours
+      expect(await buidlGuidlBread.pauseEndTime()).to.equal(0);
     });
 
-    it("Should mint 100,000 tokens to the deployer", async function () {
+    it("Should mint 1,000,000 tokens to the deployer", async function () {
       const { buidlGuidlBread, owner } = await loadFixture(deployBuidlGuidlBreadFixture);
 
-      expect(await buidlGuidlBread.balanceOf(owner.address)).to.equal(parseEther("100000"));
-      expect(await buidlGuidlBread.totalSupply()).to.equal(parseEther("100000"));
+      expect(await buidlGuidlBread.balanceOf(owner.address)).to.equal(parseEther("1000000"));
+      expect(await buidlGuidlBread.totalSupply()).to.equal(parseEther("1000000"));
     });
 
     it("Should set the RPC Bread Minter address correctly", async function () {
       const { buidlGuidlBread, rpcBreadMinter } = await loadFixture(deployBuidlGuidlBreadFixture);
 
       expect(await buidlGuidlBread.rpcBreadMinterAddress()).to.equal(rpcBreadMinter.address);
+    });
+
+    it("Should set the pause address correctly", async function () {
+      const { buidlGuidlBread, pauseAddress } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+      expect(await buidlGuidlBread.pauseAddress()).to.equal(pauseAddress.address);
     });
   });
 
@@ -64,6 +73,24 @@ describe("BuidlGuidlBread Contract", function () {
         await expect(
           buidlGuidlBread.connect(user1).setRpcBreadMinterAddress(user2.address),
         ).to.be.revertedWithCustomError(buidlGuidlBread, "OwnableUnauthorizedAccount");
+      });
+    });
+
+    describe("setPauseAddress", function () {
+      it("Should allow owner to update pause address", async function () {
+        const { buidlGuidlBread, owner, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        await buidlGuidlBread.connect(owner).setPauseAddress(user1.address);
+        expect(await buidlGuidlBread.pauseAddress()).to.equal(user1.address);
+      });
+
+      it("Should reject non-owner attempts to update pause address", async function () {
+        const { buidlGuidlBread, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        await expect(buidlGuidlBread.connect(user1).setPauseAddress(user2.address)).to.be.revertedWithCustomError(
+          buidlGuidlBread,
+          "OwnableUnauthorizedAccount",
+        );
       });
     });
 
@@ -124,6 +151,105 @@ describe("BuidlGuidlBread Contract", function () {
           buidlGuidlBread,
           "OwnableUnauthorizedAccount",
         );
+      });
+    });
+  });
+
+  describe("Pause Functionality", function () {
+    describe("pauseMinting", function () {
+      it("Should allow pause address to pause minting for 24 hours", async function () {
+        const { buidlGuidlBread, pauseAddress } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        const currentTime = await time.latest();
+        await expect(buidlGuidlBread.connect(pauseAddress).pauseMinting())
+          .to.emit(buidlGuidlBread, "MintingPaused")
+          .withArgs(currentTime + 1 + 86400); // +1 for block time increment
+
+        const pauseEndTime = await buidlGuidlBread.pauseEndTime();
+        expect(pauseEndTime).to.be.greaterThan(currentTime + 86300); // Should be around 24 hours from now
+        expect(pauseEndTime).to.be.lessThan(currentTime + 86500); // Allow some buffer for block timing
+      });
+
+      it("Should reject non-pause address attempts to pause minting", async function () {
+        const { buidlGuidlBread, owner, rpcBreadMinter, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        await expect(buidlGuidlBread.connect(owner).pauseMinting()).to.be.revertedWith(
+          "Only pause address can call this function",
+        );
+
+        await expect(buidlGuidlBread.connect(rpcBreadMinter).pauseMinting()).to.be.revertedWith(
+          "Only pause address can call this function",
+        );
+
+        await expect(buidlGuidlBread.connect(user1).pauseMinting()).to.be.revertedWith(
+          "Only pause address can call this function",
+        );
+      });
+
+      it("Should block minting when paused", async function () {
+        const { buidlGuidlBread, pauseAddress, rpcBreadMinter, user1 } =
+          await loadFixture(deployBuidlGuidlBreadFixture);
+
+        // Pause minting
+        await buidlGuidlBread.connect(pauseAddress).pauseMinting();
+
+        // Try to mint - should fail
+        await expect(
+          buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]),
+        ).to.be.revertedWith("Minting is currently paused");
+      });
+
+      it("Should allow minting again after pause expires", async function () {
+        const { buidlGuidlBread, pauseAddress, rpcBreadMinter, user1 } =
+          await loadFixture(deployBuidlGuidlBreadFixture);
+
+        // Pause minting
+        await buidlGuidlBread.connect(pauseAddress).pauseMinting();
+
+        // Fast forward past pause period (24 hours + 1 second)
+        await time.increase(86401);
+
+        // Should be able to mint again
+        await expect(buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]))
+          .to.emit(buidlGuidlBread, "Mint")
+          .withArgs(user1.address, parseEther("50"));
+
+        expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("50"));
+      });
+
+      it("Should allow multiple pauses", async function () {
+        const { buidlGuidlBread, pauseAddress, rpcBreadMinter, user1 } =
+          await loadFixture(deployBuidlGuidlBreadFixture);
+
+        // First pause
+        await buidlGuidlBread.connect(pauseAddress).pauseMinting();
+        await expect(
+          buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]),
+        ).to.be.revertedWith("Minting is currently paused");
+
+        // Wait for pause to expire
+        await time.increase(86401);
+
+        // Should be able to mint
+        await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]);
+
+        // Pause again
+        await buidlGuidlBread.connect(pauseAddress).pauseMinting();
+        await expect(
+          buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]),
+        ).to.be.revertedWith("Minting is currently paused");
+      });
+
+      it("Should not block minting when pauseEndTime is 0", async function () {
+        const { buidlGuidlBread, rpcBreadMinter, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        // Verify pauseEndTime is 0 initially
+        expect(await buidlGuidlBread.pauseEndTime()).to.equal(0);
+
+        // Should be able to mint normally
+        await expect(buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]))
+          .to.emit(buidlGuidlBread, "Mint")
+          .withArgs(user1.address, parseEther("50"));
       });
     });
   });
@@ -343,110 +469,13 @@ describe("BuidlGuidlBread Contract", function () {
     });
   });
 
-  describe("Batch Burning", function () {
-    describe("batchBurn", function () {
-      it("Should burn tokens from single address", async function () {
-        const { buidlGuidlBread, rpcBreadMinter, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        // First mint some tokens
-        await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("168")]);
-
-        const burnAmount = parseEther("30");
-        await expect(buidlGuidlBread.connect(rpcBreadMinter).batchBurn([user1.address], [burnAmount]))
-          .to.emit(buidlGuidlBread, "PenaltyBurn")
-          .withArgs(user1.address, burnAmount);
-
-        expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("138"));
-      });
-
-      it("Should burn tokens from multiple addresses", async function () {
-        const { buidlGuidlBread, rpcBreadMinter, user1, user2, user3 } =
-          await loadFixture(deployBuidlGuidlBreadFixture);
-
-        // First mint some tokens
-        const addresses = [user1.address, user2.address, user3.address];
-        const mintAmounts = [parseEther("168"), parseEther("168"), parseEther("168")];
-        await buidlGuidlBread.connect(rpcBreadMinter).batchMint(addresses, mintAmounts);
-
-        // Reset cooldown to allow more minting
-        await time.increase(86401);
-
-        const burnAmounts = [parseEther("20"), parseEther("30"), parseEther("40")];
-        await buidlGuidlBread.connect(rpcBreadMinter).batchBurn(addresses, burnAmounts);
-
-        expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("148"));
-        expect(await buidlGuidlBread.balanceOf(user2.address)).to.equal(parseEther("138"));
-        expect(await buidlGuidlBread.balanceOf(user3.address)).to.equal(parseEther("128"));
-      });
-
-      it("Should reject if not called by RPC Bread Minter", async function () {
-        const { buidlGuidlBread, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        await expect(buidlGuidlBread.connect(user1).batchBurn([user2.address], [parseEther("50")])).to.be.revertedWith(
-          "Only RPC Bread Minter can call this function",
-        );
-      });
-
-      it("Should reject mismatched array lengths", async function () {
-        const { buidlGuidlBread, rpcBreadMinter, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        await expect(
-          buidlGuidlBread.connect(rpcBreadMinter).batchBurn([user1.address, user2.address], [parseEther("50")]),
-        ).to.be.revertedWith("Address and amount arrays must be the same length");
-      });
-
-      it("Should reject empty arrays", async function () {
-        const { buidlGuidlBread, rpcBreadMinter } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        await expect(buidlGuidlBread.connect(rpcBreadMinter).batchBurn([], [])).to.be.revertedWith(
-          "Arrays cannot be empty",
-        );
-      });
-
-      it("Should reject zero address", async function () {
-        const { buidlGuidlBread, rpcBreadMinter } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        await expect(
-          buidlGuidlBread.connect(rpcBreadMinter).batchBurn([ethers.ZeroAddress], [parseEther("50")]),
-        ).to.be.revertedWith("Cannot burn from zero address");
-      });
-
-      it("Should reject zero amount", async function () {
-        const { buidlGuidlBread, rpcBreadMinter, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        await expect(buidlGuidlBread.connect(rpcBreadMinter).batchBurn([user1.address], [0])).to.be.revertedWith(
-          "Amount must be greater than 0",
-        );
-      });
-
-      it("Should reject batch size over 100", async function () {
-        const { buidlGuidlBread, rpcBreadMinter } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        const addresses = Array(101).fill(ethers.Wallet.createRandom().address);
-        const amounts = Array(101).fill(parseEther("1"));
-
-        await expect(buidlGuidlBread.connect(rpcBreadMinter).batchBurn(addresses, amounts)).to.be.revertedWith(
-          "Maximum batch size is 100",
-        );
-      });
-
-      it("Should handle insufficient balance error", async function () {
-        const { buidlGuidlBread, rpcBreadMinter, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        // Try to burn more than balance (user1 has 0 balance)
-        await expect(
-          buidlGuidlBread.connect(rpcBreadMinter).batchBurn([user1.address], [parseEther("168")]),
-        ).to.be.revertedWithCustomError(buidlGuidlBread, "ERC20InsufficientBalance");
-      });
-    });
-  });
-
   describe("Integration Tests", function () {
-    it("Should handle complex minting and burning scenario", async function () {
-      const { buidlGuidlBread, rpcBreadMinter, user1, user2, user3 } = await loadFixture(deployBuidlGuidlBreadFixture);
+    it("Should handle complex minting scenario with pause", async function () {
+      const { buidlGuidlBread, rpcBreadMinter, pauseAddress, user1, user2, user3 } =
+        await loadFixture(deployBuidlGuidlBreadFixture);
 
       // Initial state check
-      expect(await buidlGuidlBread.totalSupply()).to.equal(parseEther("100000"));
+      expect(await buidlGuidlBread.totalSupply()).to.equal(parseEther("1000000"));
 
       // Mint to multiple users
       const addresses = [user1.address, user2.address, user3.address];
@@ -459,19 +488,22 @@ describe("BuidlGuidlBread Contract", function () {
       expect(await buidlGuidlBread.balanceOf(user3.address)).to.equal(parseEther("50"));
 
       // Total supply should increase
-      expect(await buidlGuidlBread.totalSupply()).to.equal(parseEther("100120"));
+      expect(await buidlGuidlBread.totalSupply()).to.equal(parseEther("1000120"));
 
-      // Burn some tokens
-      const burnAmounts = [parseEther("10"), parseEther("15"), parseEther("20")];
-      await buidlGuidlBread.connect(rpcBreadMinter).batchBurn(addresses, burnAmounts);
+      // Pause minting
+      await buidlGuidlBread.connect(pauseAddress).pauseMinting();
 
-      // Check final balances
-      expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("20"));
-      expect(await buidlGuidlBread.balanceOf(user2.address)).to.equal(parseEther("25"));
-      expect(await buidlGuidlBread.balanceOf(user3.address)).to.equal(parseEther("30"));
+      // Try to mint more - should fail
+      await expect(
+        buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("10")]),
+      ).to.be.revertedWith("Minting is currently paused");
 
-      // Total supply should decrease
-      expect(await buidlGuidlBread.totalSupply()).to.equal(parseEther("100075"));
+      // Fast forward past pause
+      await time.increase(86401);
+
+      // Should be able to mint again
+      await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("10")]);
+      expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("40"));
     });
 
     it("Should respect rate limits across multiple transactions", async function () {
@@ -510,6 +542,10 @@ describe("BuidlGuidlBread Contract", function () {
       // Update RPC minter address
       await buidlGuidlBread.connect(owner).setRpcBreadMinterAddress(user1.address);
       expect(await buidlGuidlBread.rpcBreadMinterAddress()).to.equal(user1.address);
+
+      // Update pause address
+      await buidlGuidlBread.connect(owner).setPauseAddress(user1.address);
+      expect(await buidlGuidlBread.pauseAddress()).to.equal(user1.address);
     });
   });
 
@@ -548,6 +584,29 @@ describe("BuidlGuidlBread Contract", function () {
       // Now should be able to mint again (cooldown is over)
       expect(await buidlGuidlBread.getRemainingCooldown(user1.address)).to.equal(0);
       expect(await buidlGuidlBread.getRemainingMintAmount(user1.address)).to.equal(parseEther("168"));
+    });
+
+    it("Should handle pause timing edge cases", async function () {
+      const { buidlGuidlBread, pauseAddress, rpcBreadMinter, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+      // Pause minting
+      await buidlGuidlBread.connect(pauseAddress).pauseMinting();
+
+      // Fast forward to just before pause expires (24 hours - 2 seconds to be safe)
+      await time.increase(86398);
+
+      // Should still be paused
+      await expect(
+        buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]),
+      ).to.be.revertedWith("Minting is currently paused");
+
+      // Fast forward past pause period (add 3 seconds to be well past)
+      await time.increase(3);
+
+      // Should be able to mint again
+      await expect(buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]))
+        .to.emit(buidlGuidlBread, "Mint")
+        .withArgs(user1.address, parseEther("50"));
     });
   });
 });

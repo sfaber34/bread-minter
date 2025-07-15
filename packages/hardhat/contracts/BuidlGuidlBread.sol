@@ -9,19 +9,23 @@ contract BuidlGuidlBread is ERC20, Ownable {
     event PenaltyBurn(address indexed target, uint256 amount);
     event MintLimitUpdated(uint256 newLimit);
     event CooldownUpdated(uint256 newCooldown);
+    event MintingPaused(uint256 endTime);
 
     address public rpcBreadMinterAddress;
+    address public pauseAddress;
     uint256 public mintLimit = 168 * 10**18; // 168 Bread with 18 decimals
     uint256 public mintCooldown = 24 hours;
+    uint256 public pauseEndTime = 0;
 
     mapping(address => uint256) public lastMintTime;
     mapping(address => uint256) public mintedInPeriod;
 
     /// @param rpcBreadMinterAddress_ The address authorized to perform batch mint/burn operations
-    /// @dev Mints 100,000 tokens to the contract deployer and sets the initial minter address
-    constructor(address rpcBreadMinterAddress_) ERC20("BuidlGuidl Bread", "BGBRD") Ownable(msg.sender) {
+    /// @dev Mints 1,000,000 tokens to the contract deployer and sets the initial minter address
+    constructor(address rpcBreadMinterAddress_, address pauseAddress_) ERC20("BuidlGuidl Bread", "BGBRD") Ownable(msg.sender) {
         rpcBreadMinterAddress = rpcBreadMinterAddress_;
-        _mint(msg.sender, 100000 * 10 ** 18);
+        pauseAddress = pauseAddress_;
+        _mint(msg.sender, 1000000 * 10 ** 18);
     }
 
     /// @notice Updates the RPC Bread Minter address
@@ -29,6 +33,13 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @dev Only the contract owner can call this function
     function setRpcBreadMinterAddress(address newAddress) public onlyOwner {
         rpcBreadMinterAddress = newAddress;
+    }
+
+    /// @notice Updates the RPC address with pausing privileges 
+    /// @param newAddress The new address that will be authorized to perform pauses
+    /// @dev Only the contract owner can call this function
+    function setPauseAddress(address newAddress) public onlyOwner {
+        pauseAddress = newAddress;
     }
 
     /// @notice Sets the maximum amount that can be minted per cooldown period
@@ -51,6 +62,11 @@ contract BuidlGuidlBread is ERC20, Ownable {
 
     modifier onlyRpcBreadMinter() {
         require(msg.sender == rpcBreadMinterAddress, "Only RPC Bread Minter can call this function");
+        _;
+    }
+
+    modifier onlyPause() {
+        require(msg.sender == pauseAddress, "Only pause address can call this function");
         _;
     }
 
@@ -115,6 +131,13 @@ contract BuidlGuidlBread is ERC20, Ownable {
         return mintLimit - mintedInPeriod[user];
     }
 
+    /// @notice Pauses the minting functionality for 24 hours
+    /// @dev Only the pause address can call this function
+    function pauseMinting() public onlyPause {
+        pauseEndTime = block.timestamp + 24 hours;
+        emit MintingPaused(pauseEndTime);
+    }
+
     /// @notice Mints tokens to multiple addresses in a single transaction
     /// @param addresses Array of recipient addresses
     /// @param amounts Array of amounts to mint (must match addresses array length)
@@ -125,6 +148,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
         require(addresses.length == amounts.length, "Address and amount arrays must be the same length");
         require(addresses.length > 0, "Arrays cannot be empty");
         require(addresses.length <= 100, "Maximum batch size is 100"); // Prevent gas issues with large arrays
+        require(block.timestamp >= pauseEndTime, "Minting is currently paused");
 
         for (uint256 i = 0; i < addresses.length; i++) {
             require(addresses[i] != address(0), "Cannot mint to zero address");
@@ -134,23 +158,4 @@ contract BuidlGuidlBread is ERC20, Ownable {
             emit Mint(addresses[i], amounts[i]);
         }
     }
-
-    /// @notice Burns tokens from multiple addresses in a single transaction
-    /// @param addresses Array of addresses to burn tokens from
-    /// @param amounts Array of amounts to burn (must match addresses array length)
-    /// @dev Only the authorized RPC Bread Minter can call this function
-    /// @dev Used for penalty burns or other administrative token removal
-    /// @dev Maximum batch size is 100 to prevent gas issues
-    function batchBurn(address[] calldata addresses, uint256[] calldata amounts) public onlyRpcBreadMinter {
-        require(addresses.length == amounts.length, "Address and amount arrays must be the same length");
-        require(addresses.length > 0, "Arrays cannot be empty");
-        require(addresses.length <= 100, "Maximum batch size is 100"); // Prevent gas issues with large arrays
-
-        for (uint256 i = 0; i < addresses.length; i++) {
-            require(addresses[i] != address(0), "Cannot burn from zero address");
-            require(amounts[i] > 0, "Amount must be greater than 0");
-            _burn(addresses[i], amounts[i]);
-            emit PenaltyBurn(addresses[i], amounts[i]);
-        }
-    }
-} 
+}
