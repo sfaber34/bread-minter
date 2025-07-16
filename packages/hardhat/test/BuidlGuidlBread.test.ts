@@ -63,6 +63,34 @@ describe("BuidlGuidlBread Contract", function () {
 
       expect(await buidlGuidlBread.pauseAddress()).to.equal(pauseAddress.address);
     });
+
+    it("Should reject deployment with zero RPC Bread Minter address", async function () {
+      const [, owner, pauseAddress] = await ethers.getSigners();
+
+      const BuidlGuidlBreadFactory = await ethers.getContractFactory("BuidlGuidlBread");
+
+      await expect(
+        BuidlGuidlBreadFactory.deploy(
+          owner.address,
+          ethers.ZeroAddress, // zero RPC minter address
+          pauseAddress.address,
+        ),
+      ).to.be.revertedWith("RPC Bread Minter address cannot be zero");
+    });
+
+    it("Should reject deployment with zero pause address", async function () {
+      const [, owner, rpcBreadMinter] = await ethers.getSigners();
+
+      const BuidlGuidlBreadFactory = await ethers.getContractFactory("BuidlGuidlBread");
+
+      await expect(
+        BuidlGuidlBreadFactory.deploy(
+          owner.address,
+          rpcBreadMinter.address,
+          ethers.ZeroAddress, // zero pause address
+        ),
+      ).to.be.revertedWith("Pause address cannot be zero");
+    });
   });
 
   describe("Owner Functions", function () {
@@ -81,6 +109,14 @@ describe("BuidlGuidlBread Contract", function () {
           buidlGuidlBread.connect(user1).setRpcBreadMinterAddress(user2.address),
         ).to.be.revertedWithCustomError(buidlGuidlBread, "OwnableUnauthorizedAccount");
       });
+
+      it("Should reject zero address for RPC Bread Minter", async function () {
+        const { buidlGuidlBread, owner } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        await expect(buidlGuidlBread.connect(owner).setRpcBreadMinterAddress(ethers.ZeroAddress)).to.be.revertedWith(
+          "RPC Bread Minter address cannot be zero",
+        );
+      });
     });
 
     describe("setPauseAddress", function () {
@@ -97,6 +133,14 @@ describe("BuidlGuidlBread Contract", function () {
         await expect(buidlGuidlBread.connect(user1).setPauseAddress(user2.address)).to.be.revertedWithCustomError(
           buidlGuidlBread,
           "OwnableUnauthorizedAccount",
+        );
+      });
+
+      it("Should reject zero address for pause address", async function () {
+        const { buidlGuidlBread, owner } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        await expect(buidlGuidlBread.connect(owner).setPauseAddress(ethers.ZeroAddress)).to.be.revertedWith(
+          "Pause address cannot be zero",
         );
       });
     });
@@ -125,36 +169,6 @@ describe("BuidlGuidlBread Contract", function () {
         const { buidlGuidlBread, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
         await expect(buidlGuidlBread.connect(user1).setMintLimit(parseEther("500"))).to.be.revertedWithCustomError(
-          buidlGuidlBread,
-          "OwnableUnauthorizedAccount",
-        );
-      });
-    });
-
-    describe("setMintCooldown", function () {
-      it("Should allow owner to update mint cooldown", async function () {
-        const { buidlGuidlBread, owner } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        const newCooldown = 1200; // 20 minutes
-        await expect(buidlGuidlBread.connect(owner).setMintCooldown(newCooldown))
-          .to.emit(buidlGuidlBread, "CooldownUpdated")
-          .withArgs(newCooldown);
-
-        expect(await buidlGuidlBread.mintCooldown()).to.equal(newCooldown);
-      });
-
-      it("Should reject zero cooldown", async function () {
-        const { buidlGuidlBread, owner } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        await expect(buidlGuidlBread.connect(owner).setMintCooldown(0)).to.be.revertedWith(
-          "Cooldown must be greater than 0",
-        );
-      });
-
-      it("Should reject non-owner attempts to update cooldown", async function () {
-        const { buidlGuidlBread, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
-
-        await expect(buidlGuidlBread.connect(user1).setMintCooldown(1200)).to.be.revertedWithCustomError(
           buidlGuidlBread,
           "OwnableUnauthorizedAccount",
         );
@@ -402,34 +416,36 @@ describe("BuidlGuidlBread Contract", function () {
         );
       });
 
-      it("Should reject completing period outside of reset window", async function () {
+      it("Should allow completing period at any time after cooldown expires", async function () {
         const { buidlGuidlBread, rpcBreadMinter, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
         await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]);
         await buidlGuidlBread.connect(rpcBreadMinter).completeMintingPeriod();
 
-        // Fast forward past the 2-hour reset window (23 hours + 2 hours + 1 second)
-        await time.increase(82800 + 7200 + 1);
+        // Fast forward well past cooldown (23 hours + 10 hours)
+        await time.increase(82800 + 36000);
 
         await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]);
 
-        await expect(buidlGuidlBread.connect(rpcBreadMinter).completeMintingPeriod()).to.be.revertedWith(
-          "Reset window expired",
+        // Should be able to complete period even after a long time
+        await expect(buidlGuidlBread.connect(rpcBreadMinter).completeMintingPeriod()).to.emit(
+          buidlGuidlBread,
+          "MintingPeriodCompleted",
         );
       });
 
-      it("Should allow completing period within reset window", async function () {
+      it("Should allow completing period after cooldown expires", async function () {
         const { buidlGuidlBread, rpcBreadMinter, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
         await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]);
         await buidlGuidlBread.connect(rpcBreadMinter).completeMintingPeriod();
 
-        // Fast forward to just after cooldown expires (23 hours + 30 minutes)
-        await time.increase(82800 + 1800);
+        // Fast forward just past cooldown (23 hours + 1 second)
+        await time.increase(82801);
 
         await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]);
 
-        // Should be able to complete within the 2-hour window
+        // Should be able to complete period normally
         await expect(buidlGuidlBread.connect(rpcBreadMinter).completeMintingPeriod()).to.emit(
           buidlGuidlBread,
           "MintingPeriodCompleted",
@@ -752,10 +768,6 @@ describe("BuidlGuidlBread Contract", function () {
       await buidlGuidlBread.connect(owner).setMintLimit(parseEther("500"));
       expect(await buidlGuidlBread.mintLimit()).to.equal(parseEther("500"));
 
-      // Update cooldown
-      await buidlGuidlBread.connect(owner).setMintCooldown(1200);
-      expect(await buidlGuidlBread.mintCooldown()).to.equal(1200);
-
       // Update RPC minter address
       await buidlGuidlBread.connect(owner).setRpcBreadMinterAddress(user1.address);
       expect(await buidlGuidlBread.rpcBreadMinterAddress()).to.equal(user1.address);
@@ -829,7 +841,7 @@ describe("BuidlGuidlBread Contract", function () {
         .withArgs(user1.address, parseEther("50"));
     });
 
-    it("Should prevent the security vulnerability described in the requirements", async function () {
+    it("Should prevent sybil attacks via global rate limiting (prevents creating many addresses to bypass per-address limits)", async function () {
       const { buidlGuidlBread, rpcBreadMinter, user1, user2, user3 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
       // Create many different addresses (simulating hacker creating many accounts)

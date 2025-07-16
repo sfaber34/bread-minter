@@ -8,14 +8,13 @@ contract BuidlGuidlBread is ERC20, Ownable {
     event Mint(address indexed user, uint256 amount);
     event PenaltyBurn(address indexed target, uint256 amount);
     event MintLimitUpdated(uint256 newLimit);
-    event CooldownUpdated(uint256 newCooldown);
     event MintingPaused(uint256 endTime);
     event MintingPeriodCompleted(uint256 timestamp);
 
     address public rpcBreadMinterAddress;
     address public pauseAddress;
     uint256 public mintLimit = 420 * 10 ** 18; // 420 Bread with 18 decimals
-    uint256 public mintCooldown = 23 hours; // Changed to 23 hours for 1-hour buffer
+    uint256 public constant mintCooldown = 23 hours; // Fixed cooldown period
     uint256 public pauseEndTime = 0;
 
     // Global rate limiting instead of per-address
@@ -32,6 +31,8 @@ contract BuidlGuidlBread is ERC20, Ownable {
         address rpcBreadMinterAddress_,
         address pauseAddress_
     ) ERC20("BuidlGuidl Bread", "BGBRD") Ownable(initialOwner) {
+        require(rpcBreadMinterAddress_ != address(0), "RPC Bread Minter address cannot be zero");
+        require(pauseAddress_ != address(0), "Pause address cannot be zero");
         rpcBreadMinterAddress = rpcBreadMinterAddress_;
         pauseAddress = pauseAddress_;
         _mint(initialOwner, 1000000 * 10 ** 18);
@@ -41,6 +42,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @param newAddress The new address that will be authorized to perform batch operations
     /// @dev Only the contract owner can call this function
     function setRpcBreadMinterAddress(address newAddress) public onlyOwner {
+        require(newAddress != address(0), "RPC Bread Minter address cannot be zero");
         rpcBreadMinterAddress = newAddress;
     }
 
@@ -48,6 +50,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @param newAddress The new address that will be authorized to perform pauses
     /// @dev Only the contract owner can call this function
     function setPauseAddress(address newAddress) public onlyOwner {
+        require(newAddress != address(0), "Pause address cannot be zero");
         pauseAddress = newAddress;
     }
 
@@ -58,15 +61,6 @@ contract BuidlGuidlBread is ERC20, Ownable {
         require(newLimit > 0, "Mint limit must be greater than 0");
         mintLimit = newLimit;
         emit MintLimitUpdated(newLimit);
-    }
-
-    /// @notice Sets the cooldown period between mint limit resets
-    /// @param newCooldown The new cooldown period in seconds
-    /// @dev Only the contract owner can call this function. Cooldown must be greater than 0
-    function setMintCooldown(uint256 newCooldown) public onlyOwner {
-        require(newCooldown > 0, "Cooldown must be greater than 0");
-        mintCooldown = newCooldown;
-        emit CooldownUpdated(newCooldown);
     }
 
     modifier onlyRpcBreadMinter() {
@@ -128,16 +122,10 @@ contract BuidlGuidlBread is ERC20, Ownable {
 
     /// @notice Completes the current minting period and resets for the next period
     /// @dev Only the RPC Bread Minter can call this function after minting has occurred
-    /// @dev Must be called within 2 hours of the cooldown expiring to prevent abuse (except for first completion)
     /// @dev Blocked when minting is paused to prevent period reset during emergency
     function completeMintingPeriod() public onlyRpcBreadMinter {
         require(block.timestamp >= pauseEndTime, "Period completion paused");
         require(mintingOccurredThisPeriod, "No minting occurred this period");
-        
-        // Only enforce reset window after the first period completion
-        if (lastGlobalMintTime > 0) {
-            require(block.timestamp <= lastGlobalMintTime + mintCooldown + 2 hours, "Reset window expired");
-        }
         
         // Reset the period
         globalMintedInPeriod = 0;
