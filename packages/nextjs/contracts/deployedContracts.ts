@@ -694,10 +694,15 @@ const deployedContracts = {
   },
   31337: {
     BuidlGuidlBread: {
-      address: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      address: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
       abi: [
         {
           inputs: [
+            {
+              internalType: "address",
+              name: "initialOwner",
+              type: "address",
+            },
             {
               internalType: "address",
               name: "rpcBreadMinterAddress_",
@@ -1065,14 +1070,8 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [
-            {
-              internalType: "address",
-              name: "user",
-              type: "address",
-            },
-          ],
-          name: "getMintedInPeriod",
+          inputs: [],
+          name: "getGlobalMintedInPeriod",
           outputs: [
             {
               internalType: "uint256",
@@ -1084,13 +1083,7 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [
-            {
-              internalType: "address",
-              name: "user",
-              type: "address",
-            },
-          ],
+          inputs: [],
           name: "getRemainingCooldown",
           outputs: [
             {
@@ -1103,13 +1096,7 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [
-            {
-              internalType: "address",
-              name: "user",
-              type: "address",
-            },
-          ],
+          inputs: [],
           name: "getRemainingMintAmount",
           outputs: [
             {
@@ -1122,14 +1109,21 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [
+          inputs: [],
+          name: "globalMintedInPeriod",
+          outputs: [
             {
-              internalType: "address",
+              internalType: "uint256",
               name: "",
-              type: "address",
+              type: "uint256",
             },
           ],
-          name: "lastMintTime",
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "lastGlobalMintTime",
           outputs: [
             {
               internalType: "uint256",
@@ -1156,25 +1150,6 @@ const deployedContracts = {
         {
           inputs: [],
           name: "mintLimit",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          name: "mintedInPeriod",
           outputs: [
             {
               internalType: "uint256",

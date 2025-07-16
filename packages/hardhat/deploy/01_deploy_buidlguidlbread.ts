@@ -27,7 +27,11 @@ const deployBuidlGuidlBread: DeployFunction = async function (hre: HardhatRuntim
   // Deploy with the specified deployer address as the rpcBreadMinterAddress
   await deploy("BuidlGuidlBread", {
     from: deployer,
-    args: ["0xaC9A4652dF3878d24f35A6a6c022544aeE9748Ff", "0x38c772B96D73733F425746bd368B4B4435A37967"], // rpcBreadMinterAddress, pauseAddress
+    args: [
+      "0x4dBd522584027518dF620479947aB110d8C998af",
+      "0xaC9A4652dF3878d24f35A6a6c022544aeE9748Ff",
+      "0x38c772B96D73733F425746bd368B4B4435A37967",
+    ], // initialOwner, rpcBreadMinterAddress, pauseAddress
     log: true,
     // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
     // automatically mining the contract deployment transaction. There is no effect on live networks.
