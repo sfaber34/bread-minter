@@ -694,7 +694,7 @@ const deployedContracts = {
   },
   31337: {
     BuidlGuidlBread: {
-      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      address: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
       abi: [
         {
           inputs: [
@@ -705,7 +705,7 @@ const deployedContracts = {
             },
             {
               internalType: "address",
-              name: "rpcBreadMinterAddress_",
+              name: "batchMinterAddress_",
               type: "address",
             },
             {
@@ -724,6 +724,26 @@ const deployedContracts = {
         },
         {
           inputs: [],
+          name: "BatchMintAmountExceedsLimit",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "BatchMintCooldownNotExpired",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "BatchMintLimitCannotBeZero",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "BatchMintingPeriodCompletionPaused",
+          type: "error",
+        },
+        {
+          inputs: [],
           name: "BatchSizeTooLarge",
           type: "error",
         },
@@ -734,12 +754,17 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "CannotSetZeroAddress",
+          name: "CannotMintWhilePaused",
           type: "error",
         },
         {
           inputs: [],
-          name: "CooldownNotExpired",
+          name: "CannotMintZeroAmount",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "CannotSetZeroAddress",
           type: "error",
         },
         {
@@ -835,27 +860,7 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "InvalidAmount",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "MintAmountExceedsGlobalLimit",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "MintLimitCannotBeZero",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "MintingCurrentlyPaused",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "NoMintingOccurredThisPeriod",
+          name: "NoBatchMintingOccurredThisPeriod",
           type: "error",
         },
         {
@@ -882,17 +887,12 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "PeriodCompletionPaused",
+          name: "UnauthorizedBatchMinter",
           type: "error",
         },
         {
           inputs: [],
           name: "UnauthorizedPause",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "UnauthorizedRpcBreadMinter",
           type: "error",
         },
         {
@@ -924,6 +924,32 @@ const deployedContracts = {
           anonymous: false,
           inputs: [
             {
+              indexed: false,
+              internalType: "uint256",
+              name: "newLimit",
+              type: "uint256",
+            },
+          ],
+          name: "BatchMintLimitUpdated",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "timestamp",
+              type: "uint256",
+            },
+          ],
+          name: "BatchMintingPeriodCompleted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
               indexed: true,
               internalType: "address",
               name: "user",
@@ -945,37 +971,11 @@ const deployedContracts = {
             {
               indexed: false,
               internalType: "uint256",
-              name: "newLimit",
-              type: "uint256",
-            },
-          ],
-          name: "MintLimitUpdated",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: false,
-              internalType: "uint256",
               name: "endTime",
               type: "uint256",
             },
           ],
           name: "MintingPaused",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "timestamp",
-              type: "uint256",
-            },
-          ],
-          name: "MintingPeriodCompleted",
           type: "event",
         },
         {
@@ -995,25 +995,6 @@ const deployedContracts = {
             },
           ],
           name: "OwnershipTransferred",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "address",
-              name: "target",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-          ],
-          name: "PenaltyBurn",
           type: "event",
         },
         {
@@ -1043,7 +1024,7 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "MINT_COOLDOWN",
+          name: "BATCH_MINT_COOLDOWN",
           outputs: [
             {
               internalType: "uint256",
@@ -1141,7 +1122,46 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "completeMintingPeriod",
+          name: "batchMintLimit",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "batchMinterAddress",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "batchMintingOccurredThisPeriod",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "completeBatchMintingPeriod",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -1161,7 +1181,7 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "getGlobalMintedInPeriod",
+          name: "getRemainingBatchMintAmount",
           outputs: [
             {
               internalType: "uint256",
@@ -1187,7 +1207,7 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "getRemainingMintAmount",
+          name: "getTotalBatchMintedInPeriod",
           outputs: [
             {
               internalType: "uint256",
@@ -1200,51 +1220,12 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "globalMintedInPeriod",
+          name: "lastBatchMintTime",
           outputs: [
             {
               internalType: "uint256",
               name: "",
               type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "lastGlobalMintTime",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "mintLimit",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "mintingOccurredThisPeriod",
-          outputs: [
-            {
-              internalType: "bool",
-              name: "",
-              type: "bool",
             },
           ],
           stateMutability: "view",
@@ -1317,19 +1298,6 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [],
-          name: "rpcBreadMinterAddress",
-          outputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
           inputs: [
             {
               internalType: "uint256",
@@ -1337,7 +1305,20 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
-          name: "setMintLimit",
+          name: "setBatchMintLimit",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "newAddress",
+              type: "address",
+            },
+          ],
+          name: "setBatchMinterAddress",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -1356,19 +1337,6 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [
-            {
-              internalType: "address",
-              name: "newAddress",
-              type: "address",
-            },
-          ],
-          name: "setRpcBreadMinterAddress",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
           inputs: [],
           name: "symbol",
           outputs: [
@@ -1376,6 +1344,19 @@ const deployedContracts = {
               internalType: "string",
               name: "",
               type: "string",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "totalBatchMintedInPeriod",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
             },
           ],
           stateMutability: "view",

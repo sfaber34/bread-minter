@@ -21,7 +21,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
     error ArrayLengthMismatch();
     error EmptyArrays();
     error BatchSizeTooLarge();
-    error MintingPaused();
+    error CannotMintWhilePaused();
     error CannotMintZeroAmount();
     error CannotMintToZeroAddress();
 
@@ -154,7 +154,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
         if (addresses.length != amounts.length) revert ArrayLengthMismatch();
         if (addresses.length == 0) revert EmptyArrays();
         if (addresses.length > 100) revert BatchSizeTooLarge(); // Prevent gas issues with large arrays
-        if (block.timestamp < pauseEndTime) revert MintingPaused();
+        if (block.timestamp < pauseEndTime) revert CannotMintWhilePaused();
 
         // Calculate total amount to check against global limit
         uint256 totalAmount = 0;
