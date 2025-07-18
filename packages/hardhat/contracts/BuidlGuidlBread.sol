@@ -6,11 +6,11 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IBuidlGuidlBread} from "./IBuidlGuidlBread.sol";
 
 contract BuidlGuidlBread is ERC20, Ownable, IBuidlGuidlBread {
-    address public batchMinterAddress;
-    address public pauseAddress;
     uint256 public constant BATCH_MINT_COOLDOWN = 23 hours;
     uint256 public constant OWNER_MINT_COOLDOWN = 24 hours;
     uint256 public constant OWNER_MINT_LIMIT = 10_000 ether;
+    address public batchMinterAddress;
+    address public pauseAddress;
     uint256 public batchMintLimit = 420 ether;
     uint256 public lastBatchMintTime;
     uint256 public totalBatchMintedInPeriod;    
@@ -68,6 +68,13 @@ contract BuidlGuidlBread is ERC20, Ownable, IBuidlGuidlBread {
         _;
     }
 
+    /// @notice Pauses the minting functionality for 24 hours
+    /// @dev Only the pause address can call this function
+    function pauseMinting() public onlyPause {
+        pauseEndTime = block.timestamp + 24 hours;
+        emit MintingPaused(pauseEndTime);
+    }
+
     /// @dev Internal function to check and enforce batch mint rate limiting for token minting
     /// @param amount The amount of tokens being minted
     /// @notice Checks if cooldown has passed and validates amount against current period limit
@@ -105,41 +112,6 @@ contract BuidlGuidlBread is ERC20, Ownable, IBuidlGuidlBread {
         }
 
         return batchMintLimit - totalBatchMintedInPeriod;
-    }
-
-    /// @notice Returns the remaining cooldown time before owner minting can resume
-    /// @return The number of seconds remaining in the owner mint cooldown period (0 if cooldown has passed)
-    function getOwnerMintRemainingCooldown() public view returns (uint256) {
-        uint256 timeSinceLastMint = block.timestamp - lastOwnerMintTime;
-
-        if (timeSinceLastMint >= OWNER_MINT_COOLDOWN) {
-            return 0;
-        }
-
-        return OWNER_MINT_COOLDOWN - timeSinceLastMint;
-    }
-
-    /// @notice Returns the amount of tokens owner minted in the current period
-    /// @return The amount of tokens owner minted in the current period
-    function getTotalOwnerMintedInPeriod() public view returns (uint256) {
-        return totalOwnerMintedInPeriod;
-    }
-
-    /// @notice Returns the remaining amount that can be owner minted in the current period
-    /// @return The amount of tokens that can still be owner minted in the current period
-    function getRemainingOwnerMintAmount() public view returns (uint256) {
-        if (totalOwnerMintedInPeriod >= OWNER_MINT_LIMIT) {
-            return 0;
-        }
-
-        return OWNER_MINT_LIMIT - totalOwnerMintedInPeriod;
-    }
-
-    /// @notice Pauses the minting functionality for 24 hours
-    /// @dev Only the pause address can call this function
-    function pauseMinting() public onlyPause {
-        pauseEndTime = block.timestamp + 24 hours;
-        emit MintingPaused(pauseEndTime);
     }
 
     /// @notice Completes the current batch minting period and resets for the next period
@@ -189,6 +161,34 @@ contract BuidlGuidlBread is ERC20, Ownable, IBuidlGuidlBread {
         // Update global tracking
         totalBatchMintedInPeriod += totalAmount;
         batchMintingOccurredThisPeriod = true;
+    }
+
+    /// @notice Returns the remaining cooldown time before owner minting can resume
+    /// @return The number of seconds remaining in the owner mint cooldown period (0 if cooldown has passed)
+    function getOwnerMintRemainingCooldown() public view returns (uint256) {
+        uint256 timeSinceLastMint = block.timestamp - lastOwnerMintTime;
+
+        if (timeSinceLastMint >= OWNER_MINT_COOLDOWN) {
+            return 0;
+        }
+
+        return OWNER_MINT_COOLDOWN - timeSinceLastMint;
+    }
+
+    /// @notice Returns the amount of tokens owner minted in the current period
+    /// @return The amount of tokens owner minted in the current period
+    function getTotalOwnerMintedInPeriod() public view returns (uint256) {
+        return totalOwnerMintedInPeriod;
+    }
+
+    /// @notice Returns the remaining amount that can be owner minted in the current period
+    /// @return The amount of tokens that can still be owner minted in the current period
+    function getRemainingOwnerMintAmount() public view returns (uint256) {
+        if (totalOwnerMintedInPeriod >= OWNER_MINT_LIMIT) {
+            return 0;
+        }
+
+        return OWNER_MINT_LIMIT - totalOwnerMintedInPeriod;
     }
 
     /// @notice Mints tokens to a single address (can be called by owner only)
