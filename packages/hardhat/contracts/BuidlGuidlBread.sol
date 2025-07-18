@@ -3,31 +3,9 @@ pragma solidity 0.8.30;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IBuidlGuidlBread} from "./IBuidlGuidlBread.sol";
 
-contract BuidlGuidlBread is ERC20, Ownable {
-    event BatchMint(address indexed user, uint256 amount);
-    event OwnerMint(address indexed to, uint256 amount);
-    event BatchMintLimitUpdated(uint256 newLimit);
-    event MintingPaused(uint256 endTime);
-    event BatchMintingPeriodCompleted(uint256 timestamp);
-
-    error CannotSetZeroAddress();
-    error BatchMintLimitCannotBeZero();
-    error UnauthorizedBatchMinter();
-    error UnauthorizedPause();
-    error BatchMintCooldownNotExpired();
-    error BatchMintAmountExceedsLimit();
-    error BatchMintingPeriodCompletionPaused();
-    error NoBatchMintingOccurredThisPeriod();
-    error ArrayLengthMismatch();
-    error EmptyArrays();
-    error BatchSizeTooLarge();
-    error CannotMintWhilePaused();
-    error CannotMintZeroAmount();
-    error CannotMintToZeroAddress();
-    error OwnerMintCooldownNotExpired();
-    error OwnerMintAmountExceedsLimit();
-
+contract BuidlGuidlBread is ERC20, Ownable, IBuidlGuidlBread {
     address public batchMinterAddress;
     address public pauseAddress;
     uint256 public constant BATCH_MINT_COOLDOWN = 23 hours;
