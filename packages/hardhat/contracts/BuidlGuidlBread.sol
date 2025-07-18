@@ -11,10 +11,25 @@ contract BuidlGuidlBread is ERC20, Ownable {
     event MintingPaused(uint256 endTime);
     event MintingPeriodCompleted(uint256 timestamp);
 
+    error ZeroAddress();
+    error MintLimitCannotBeZero();
+    error UnauthorizedRpcBreadMinter();
+    error UnauthorizedPause();
+    error CooldownNotExpired();
+    error MintAmountExceedsGlobalLimit();
+    error PeriodCompletionPaused();
+    error NoMintingOccurredThisPeriod();
+    error ArrayLengthMismatch();
+    error EmptyArrays();
+    error BatchSizeTooLarge();
+    error MintingCurrentlyPaused();
+    error InvalidAmount();
+    error MintToZeroAddress();
+
     address public rpcBreadMinterAddress;
     address public pauseAddress;
     uint256 public mintLimit = 420 * 10 ** 18; // 420 Bread with 18 decimals
-    uint256 public constant mintCooldown = 23 hours; // Fixed cooldown period
+    uint256 public constant MINT_COOLDOWN = 23 hours;
     uint256 public pauseEndTime = 0;
 
     // Global rate limiting instead of per-address
@@ -31,8 +46,8 @@ contract BuidlGuidlBread is ERC20, Ownable {
         address rpcBreadMinterAddress_,
         address pauseAddress_
     ) ERC20("BuidlGuidl Bread", "BGBRD") Ownable(initialOwner) {
-        require(rpcBreadMinterAddress_ != address(0), "RPC Bread Minter address cannot be zero");
-        require(pauseAddress_ != address(0), "Pause address cannot be zero");
+        if (rpcBreadMinterAddress_ == address(0)) revert ZeroAddress();
+        if (pauseAddress_ == address(0)) revert ZeroAddress();
         rpcBreadMinterAddress = rpcBreadMinterAddress_;
         pauseAddress = pauseAddress_;
         _mint(initialOwner, 1000000 * 10 ** 18);
@@ -42,7 +57,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @param newAddress The new address that will be authorized to perform batch operations
     /// @dev Only the contract owner can call this function
     function setRpcBreadMinterAddress(address newAddress) public onlyOwner {
-        require(newAddress != address(0), "RPC Bread Minter address cannot be zero");
+        if (newAddress == address(0)) revert ZeroAddress();
         rpcBreadMinterAddress = newAddress;
     }
 
@@ -50,7 +65,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @param newAddress The new address that will be authorized to perform pauses
     /// @dev Only the contract owner can call this function
     function setPauseAddress(address newAddress) public onlyOwner {
-        require(newAddress != address(0), "Pause address cannot be zero");
+        if (newAddress == address(0)) revert ZeroAddress();
         pauseAddress = newAddress;
     }
 
@@ -58,18 +73,18 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @param newLimit The new mint limit in wei (with 18 decimals)
     /// @dev Only the contract owner can call this function. Limit must be greater than 0
     function setMintLimit(uint256 newLimit) public onlyOwner {
-        require(newLimit > 0, "Mint limit must be greater than 0");
+        if (newLimit == 0) revert MintLimitCannotBeZero();
         mintLimit = newLimit;
         emit MintLimitUpdated(newLimit);
     }
 
     modifier onlyRpcBreadMinter() {
-        require(msg.sender == rpcBreadMinterAddress, "Only RPC Bread Minter can call this function");
+        if (msg.sender != rpcBreadMinterAddress) revert UnauthorizedRpcBreadMinter();
         _;
     }
 
     modifier onlyPause() {
-        require(msg.sender == pauseAddress, "Only pause address can call this function");
+        if (msg.sender != pauseAddress) revert UnauthorizedPause();
         _;
     }
 
@@ -78,10 +93,10 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @notice Checks if cooldown has passed and validates amount against current period limit
     function _checkGlobalRateLimit(uint256 amount) internal view {
         // Check if cooldown period has passed since last reset
-        require(block.timestamp >= lastGlobalMintTime + mintCooldown, "Cooldown period not expired");
+        if (block.timestamp < lastGlobalMintTime + MINT_COOLDOWN) revert CooldownNotExpired();
         
         // Check if the amount would exceed the global limit for this period
-        require(globalMintedInPeriod + amount <= mintLimit, "Mint amount exceeds global limit");
+        if (globalMintedInPeriod + amount > mintLimit) revert MintAmountExceedsGlobalLimit();
     }
 
     /// @notice Returns the remaining cooldown time before minting can resume globally
@@ -89,11 +104,11 @@ contract BuidlGuidlBread is ERC20, Ownable {
     function getRemainingCooldown() public view returns (uint256) {
         uint256 timeSinceLastReset = block.timestamp - lastGlobalMintTime;
 
-        if (timeSinceLastReset >= mintCooldown) {
+        if (timeSinceLastReset >= MINT_COOLDOWN) {
             return 0;
         }
 
-        return mintCooldown - timeSinceLastReset;
+        return MINT_COOLDOWN - timeSinceLastReset;
     }
 
     /// @notice Returns the amount of tokens minted globally in the current period
@@ -123,8 +138,8 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @dev Only the RPC Bread Minter can call this function after minting has occurred
     /// @dev Blocked when minting is paused to prevent period reset during emergency
     function completeMintingPeriod() public onlyRpcBreadMinter {
-        require(block.timestamp >= pauseEndTime, "Period completion paused");
-        require(mintingOccurredThisPeriod, "No minting occurred this period");
+        if (block.timestamp < pauseEndTime) revert PeriodCompletionPaused();
+        if (!mintingOccurredThisPeriod) revert NoMintingOccurredThisPeriod();
         
         // Reset the period
         globalMintedInPeriod = 0;
@@ -141,15 +156,15 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @dev Enforces global rate limiting and validates all inputs
     /// @dev Maximum batch size is 100 to prevent gas issues
     function batchMint(address[] calldata addresses, uint256[] calldata amounts) public onlyRpcBreadMinter {
-        require(addresses.length == amounts.length, "Address and amount arrays must be the same length");
-        require(addresses.length > 0, "Arrays cannot be empty");
-        require(addresses.length <= 100, "Maximum batch size is 100"); // Prevent gas issues with large arrays
-        require(block.timestamp >= pauseEndTime, "Minting is currently paused");
+        if (addresses.length != amounts.length) revert ArrayLengthMismatch();
+        if (addresses.length == 0) revert EmptyArrays();
+        if (addresses.length > 100) revert BatchSizeTooLarge(); // Prevent gas issues with large arrays
+        if (block.timestamp < pauseEndTime) revert MintingCurrentlyPaused();
 
         // Calculate total amount to check against global limit
         uint256 totalAmount = 0;
         for (uint256 i = 0; i < amounts.length; i++) {
-            require(amounts[i] > 0, "Amount must be greater than 0");
+            if (amounts[i] == 0) revert InvalidAmount();
             totalAmount += amounts[i];
         }
 
@@ -158,7 +173,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
 
         // Perform the mints
         for (uint256 i = 0; i < addresses.length; i++) {
-            require(addresses[i] != address(0), "Cannot mint to zero address");
+            if (addresses[i] == address(0)) revert MintToZeroAddress();
             _mint(addresses[i], amounts[i]);
             emit Mint(addresses[i], amounts[i]);
         }
