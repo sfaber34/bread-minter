@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity 0.8.30;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract BuidlGuidlBread is ERC20, Ownable {
     event Mint(address indexed user, uint256 amount);
@@ -87,8 +87,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @notice Returns the remaining cooldown time before minting can resume globally
     /// @return The number of seconds remaining in the cooldown period (0 if cooldown has passed)
     function getRemainingCooldown() public view returns (uint256) {
-        uint256 currentTime = block.timestamp;
-        uint256 timeSinceLastReset = currentTime - lastGlobalMintTime;
+        uint256 timeSinceLastReset = block.timestamp - lastGlobalMintTime;
 
         if (timeSinceLastReset >= mintCooldown) {
             return 0;
