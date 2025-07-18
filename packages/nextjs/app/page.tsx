@@ -3,10 +3,17 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import type { NextPage } from "next";
-import { formatEther } from "viem";
+import { formatEther, parseEther } from "viem";
 import { useAccount, useEnsName, usePublicClient } from "wagmi";
 import { mainnet } from "wagmi/chains";
-import { useScaffoldEventHistory, useScaffoldReadContract, useScaffoldWatchContractEvent } from "~~/hooks/scaffold-eth";
+import { AddressInput, InputBase } from "~~/components/scaffold-eth";
+import {
+  useScaffoldEventHistory,
+  useScaffoldReadContract,
+  useScaffoldWatchContractEvent,
+  useScaffoldWriteContract,
+} from "~~/hooks/scaffold-eth";
+import { notification } from "~~/utils/scaffold-eth";
 
 type EventWithTimestamp = {
   event: any; // The event object
@@ -31,10 +38,19 @@ const Home: NextPage = () => {
   const [mintEventsWithTime, setMintEventsWithTime] = useState<EventWithTimestamp[]>([]);
   const [pendingBread, setPendingBread] = useState<number | null>(null);
 
+  // Transfer state
+  const [transferTo, setTransferTo] = useState<string>("");
+  const [transferAmount, setTransferAmount] = useState<string>("");
+  const [isTransferring, setIsTransferring] = useState(false);
+
   const { data: breadBalance } = useScaffoldReadContract({
     contractName: "BuidlGuidlBread",
     functionName: "balanceOf",
     args: [connectedAddress],
+  });
+
+  const { writeContractAsync: writeBreadContract } = useScaffoldWriteContract({
+    contractName: "BuidlGuidlBread",
   });
 
   const { data: mintEvents } = useScaffoldEventHistory({
@@ -166,6 +182,41 @@ const Home: NextPage = () => {
     return () => clearInterval(interval);
   }, [connectedAddress, ensName, ensLoading, ensError]);
 
+  const handleTransfer = async () => {
+    if (!transferTo || !transferAmount || !connectedAddress) {
+      notification.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      setIsTransferring(true);
+
+      const amountInWei = parseEther(transferAmount);
+
+      // Check if user has enough balance
+      if (breadBalance && amountInWei > breadBalance) {
+        notification.error("Insufficient balance");
+        return;
+      }
+
+      await writeBreadContract({
+        functionName: "transfer",
+        args: [transferTo, amountInWei],
+      });
+
+      notification.success("Transfer successful!");
+
+      // Clear form
+      setTransferTo("");
+      setTransferAmount("");
+    } catch (error: any) {
+      console.error("Transfer error:", error);
+      notification.error("Transfer failed: " + (error?.message || "Unknown error"));
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
   return (
     <>
       <div className="flex items-center flex-col flex-grow pt-10">
@@ -204,6 +255,49 @@ const Home: NextPage = () => {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Transfer Interface */}
+            <div className="bg-base-300 rounded-3xl px-6 py-4">
+              <h2 className="text-xl font-bold mb-4 text-blue-500">Transfer Bread</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Recipient Address</label>
+                  <AddressInput value={transferTo} onChange={setTransferTo} placeholder="Enter recipient address" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Amount</label>
+                  <InputBase
+                    name="transferAmount"
+                    value={transferAmount}
+                    onChange={setTransferAmount}
+                    placeholder="0.0"
+                    prefix={<span className="pl-4 -mr-2 text-accent self-center">🍞</span>}
+                  />
+                </div>
+
+                <button
+                  className={`w-full btn text-lg font-semibold ${
+                    isTransferring
+                      ? "btn-disabled"
+                      : transferTo && transferAmount
+                        ? "bg-blue-400 hover:bg-blue-500 text-white border-blue-400 hover:border-blue-500"
+                        : "btn-primary"
+                  }`}
+                  onClick={handleTransfer}
+                  disabled={!connectedAddress || isTransferring || !transferTo || !transferAmount}
+                >
+                  {isTransferring ? (
+                    <span className="flex items-center gap-2">
+                      <span className="loading loading-spinner loading-sm"></span>
+                      Transferring...
+                    </span>
+                  ) : (
+                    "Transfer Bread"
+                  )}
+                </button>
               </div>
             </div>
           </div>

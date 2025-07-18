@@ -694,7 +694,7 @@ const deployedContracts = {
   },
   31337: {
     BuidlGuidlBread: {
-      address: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
       abi: [
         {
           inputs: [
@@ -854,19 +854,6 @@ const deployedContracts = {
           anonymous: false,
           inputs: [
             {
-              indexed: false,
-              internalType: "uint256",
-              name: "newCooldown",
-              type: "uint256",
-            },
-          ],
-          name: "CooldownUpdated",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
               indexed: true,
               internalType: "address",
               name: "user",
@@ -906,6 +893,19 @@ const deployedContracts = {
             },
           ],
           name: "MintingPaused",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "timestamp",
+              type: "uint256",
+            },
+          ],
+          name: "MintingPeriodCompleted",
           type: "event",
         },
         {
@@ -1058,6 +1058,13 @@ const deployedContracts = {
         },
         {
           inputs: [],
+          name: "completeMintingPeriod",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
           name: "decimals",
           outputs: [
             {
@@ -1162,6 +1169,19 @@ const deployedContracts = {
         },
         {
           inputs: [],
+          name: "mintingOccurredThisPeriod",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
           name: "name",
           outputs: [
             {
@@ -1237,19 +1257,6 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "newCooldown",
-              type: "uint256",
-            },
-          ],
-          name: "setMintCooldown",
-          outputs: [],
-          stateMutability: "nonpayable",
           type: "function",
         },
         {
