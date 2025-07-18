@@ -6,18 +6,18 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract BuidlGuidlBread is ERC20, Ownable {
     event Mint(address indexed user, uint256 amount);
-    event MintLimitUpdated(uint256 newLimit);
+    event BatchMintLimitUpdated(uint256 newLimit);
     event MintingPaused(uint256 endTime);
-    event MintingPeriodCompleted(uint256 timestamp);
+    event BatchMintingPeriodCompleted(uint256 timestamp);
 
     error CannotSetZeroAddress();
-    error MintLimitCannotBeZero();
-    error UnauthorizedRpcBreadMinter();
+    error BatchMintLimitCannotBeZero();
+    error UnauthorizedBatchMinter();
     error UnauthorizedPause();
-    error CooldownNotExpired();
-    error MintAmountExceedsGlobalLimit();
-    error MintingPeriodCompletionPaused();
-    error NoMintingOccurredThisPeriod();
+    error BatchMintCooldownNotExpired();
+    error BatchMintAmountExceedsLimit();
+    error BatchMintingPeriodCompletionPaused();
+    error NoBatchMintingOccurredThisPeriod();
     error ArrayLengthMismatch();
     error EmptyArrays();
     error BatchSizeTooLarge();
@@ -25,38 +25,38 @@ contract BuidlGuidlBread is ERC20, Ownable {
     error CannotMintZeroAmount();
     error CannotMintToZeroAddress();
 
-    uint256 public constant MINT_COOLDOWN = 23 hours;
-    uint256 public mintLimit = 420 ether;    
+    uint256 public constant BATCH_MINT_COOLDOWN = 23 hours;
+    uint256 public batchMintLimit = 420 ether;    
     uint256 public pauseEndTime = 0;
-    address public rpcBreadMinterAddress;
+    address public batchMinterAddress;
     address public pauseAddress;
-    uint256 public lastGlobalMintTime;
-    uint256 public globalMintedInPeriod;
-    bool public mintingOccurredThisPeriod;
+    uint256 public lastBatchMintTime;
+    uint256 public totalBatchMintedInPeriod;
+    bool public batchMintingOccurredThisPeriod;
 
     /// @param initialOwner The address that will own the contract and receive initial tokens
-    /// @param rpcBreadMinterAddress_ The address authorized to perform batch mint/burn operations
+    /// @param batchMinterAddress_ The address authorized to perform batch mint/burn operations
     /// @param pauseAddress_ The address authorized to pause minting
     constructor(
         address initialOwner,
-        address rpcBreadMinterAddress_,
+        address batchMinterAddress_,
         address pauseAddress_
     ) ERC20("BuidlGuidl Bread", "BGBRD") Ownable(initialOwner) {
-        if (rpcBreadMinterAddress_ == address(0)) revert CannotSetZeroAddress();
+        if (batchMinterAddress_ == address(0)) revert CannotSetZeroAddress();
         if (pauseAddress_ == address(0)) revert CannotSetZeroAddress();
-        rpcBreadMinterAddress = rpcBreadMinterAddress_;
+        batchMinterAddress = batchMinterAddress_;
         pauseAddress = pauseAddress_;
     }
 
-    /// @notice Updates the RPC Bread Minter address
+    /// @notice Updates the Batch Minter address
     /// @param newAddress The new address that will be authorized to perform batch operations
     /// @dev Only the contract owner can call this function
-    function setRpcBreadMinterAddress(address newAddress) public onlyOwner {
+    function setBatchMinterAddress(address newAddress) public onlyOwner {
         if (newAddress == address(0)) revert CannotSetZeroAddress();
-        rpcBreadMinterAddress = newAddress;
+        batchMinterAddress = newAddress;
     }
 
-    /// @notice Updates the RPC address with pausing privileges
+    /// @notice Updates the address that has pausing privileges
     /// @param newAddress The new address that will be authorized to perform pauses
     /// @dev Only the contract owner can call this function
     function setPauseAddress(address newAddress) public onlyOwner {
@@ -67,14 +67,14 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @notice Sets the maximum amount that can be minted per cooldown period globally
     /// @param newLimit The new mint limit in wei (with 18 decimals)
     /// @dev Only the contract owner can call this function. Limit must be greater than 0
-    function setMintLimit(uint256 newLimit) public onlyOwner {
-        if (newLimit == 0) revert MintLimitCannotBeZero();
-        mintLimit = newLimit;
-        emit MintLimitUpdated(newLimit);
+    function setBatchMintLimit(uint256 newLimit) public onlyOwner {
+        if (newLimit == 0) revert BatchMintLimitCannotBeZero();
+        batchMintLimit = newLimit;
+        emit BatchMintLimitUpdated(newLimit);
     }
 
-    modifier onlyRpcBreadMinter() {
-        if (msg.sender != rpcBreadMinterAddress) revert UnauthorizedRpcBreadMinter();
+    modifier onlyBatchMinter() {
+        if (msg.sender != batchMinterAddress) revert UnauthorizedBatchMinter();
         _;
     }
 
@@ -83,43 +83,43 @@ contract BuidlGuidlBread is ERC20, Ownable {
         _;
     }
 
-    /// @dev Internal function to check and enforce global rate limiting for token minting
+    /// @dev Internal function to check and enforce batch mint rate limiting for token minting
     /// @param amount The amount of tokens being minted
     /// @notice Checks if cooldown has passed and validates amount against current period limit
-    function _checkGlobalRateLimit(uint256 amount) internal view {
+    function _checkBatchMintRateLimit(uint256 amount) internal view {
         // Check if cooldown period has passed since last reset
-        if (block.timestamp < lastGlobalMintTime + MINT_COOLDOWN) revert CooldownNotExpired();
+        if (block.timestamp < lastBatchMintTime + BATCH_MINT_COOLDOWN) revert BatchMintCooldownNotExpired();
         
         // Check if the amount would exceed the global limit for this period
-        if (globalMintedInPeriod + amount > mintLimit) revert MintAmountExceedsGlobalLimit();
+        if (totalBatchMintedInPeriod + amount > batchMintLimit) revert BatchMintAmountExceedsLimit();
     }
 
     /// @notice Returns the remaining cooldown time before minting can resume globally
     /// @return The number of seconds remaining in the cooldown period (0 if cooldown has passed)
     function getRemainingCooldown() public view returns (uint256) {
-        uint256 timeSinceLastReset = block.timestamp - lastGlobalMintTime;
+        uint256 timeSinceLastReset = block.timestamp - lastBatchMintTime;
 
-        if (timeSinceLastReset >= MINT_COOLDOWN) {
+        if (timeSinceLastReset >= BATCH_MINT_COOLDOWN) {
             return 0;
         }
 
-        return MINT_COOLDOWN - timeSinceLastReset;
+        return BATCH_MINT_COOLDOWN - timeSinceLastReset;
     }
 
-    /// @notice Returns the amount of tokens minted globally in the current period
-    /// @return The amount of tokens minted in the current period
-    function getGlobalMintedInPeriod() public view returns (uint256) {
-        return globalMintedInPeriod;
+    /// @notice Returns the amount of tokens batch minted in the current period
+    /// @return The amount of tokens batch minted in the current period
+    function getTotalBatchMintedInPeriod() public view returns (uint256) {
+        return totalBatchMintedInPeriod;
     }
 
-    /// @notice Returns the remaining amount that can be minted globally in the current period
-    /// @return The amount of tokens that can still be minted in the current period
-    function getRemainingMintAmount() public view returns (uint256) {
-        if (globalMintedInPeriod >= mintLimit) {
+    /// @notice Returns the remaining amount that can be batch minted in the current period
+    /// @return The amount of tokens that can still be batch minted in the current period
+    function getRemainingBatchMintAmount() public view returns (uint256) {
+        if (totalBatchMintedInPeriod >= batchMintLimit) {
             return 0;
         }
 
-        return mintLimit - globalMintedInPeriod;
+        return batchMintLimit - totalBatchMintedInPeriod;
     }
 
     /// @notice Pauses the minting functionality for 24 hours
@@ -129,28 +129,28 @@ contract BuidlGuidlBread is ERC20, Ownable {
         emit MintingPaused(pauseEndTime);
     }
 
-    /// @notice Completes the current minting period and resets for the next period
+    /// @notice Completes the current batch minting period and resets for the next period
     /// @dev Only the RPC Bread Minter can call this function after minting has occurred
     /// @dev Blocked when minting is paused to prevent period reset during emergency
-    function completeMintingPeriod() public onlyRpcBreadMinter {
-        if (block.timestamp < pauseEndTime) revert MintingPeriodCompletionPaused();
-        if (!mintingOccurredThisPeriod) revert NoMintingOccurredThisPeriod();
+    function completeBatchMintingPeriod() public onlyBatchMinter {
+        if (block.timestamp < pauseEndTime) revert BatchMintingPeriodCompletionPaused();
+        if (!batchMintingOccurredThisPeriod) revert NoBatchMintingOccurredThisPeriod();
         
         // Reset the period
-        globalMintedInPeriod = 0;
-        lastGlobalMintTime = block.timestamp;
-        mintingOccurredThisPeriod = false;
+        totalBatchMintedInPeriod = 0;
+        lastBatchMintTime = block.timestamp;
+        batchMintingOccurredThisPeriod = false;
         
-        emit MintingPeriodCompleted(block.timestamp);
+        emit BatchMintingPeriodCompleted(block.timestamp);
     }
 
     /// @notice Mints tokens to multiple addresses in a single transaction
     /// @param addresses Array of recipient addresses
     /// @param amounts Array of amounts to mint (must match addresses array length)
-    /// @dev Only the authorized RPC Bread Minter can call this function
-    /// @dev Enforces global rate limiting and validates all inputs
+    /// @dev Only the authorized Batch Minter can call this function
+    /// @dev Enforces overall rate limiting and validates all inputs
     /// @dev Maximum batch size is 100 to prevent gas issues
-    function batchMint(address[] calldata addresses, uint256[] calldata amounts) public onlyRpcBreadMinter {
+    function batchMint(address[] calldata addresses, uint256[] calldata amounts) public onlyBatchMinter {
         if (addresses.length != amounts.length) revert ArrayLengthMismatch();
         if (addresses.length == 0) revert EmptyArrays();
         if (addresses.length > 100) revert BatchSizeTooLarge(); // Prevent gas issues with large arrays
@@ -164,7 +164,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
         }
 
         // Check global rate limit for the total amount
-        _checkGlobalRateLimit(totalAmount);
+        _checkBatchMintRateLimit(totalAmount);
 
         // Perform the mints
         for (uint256 i = 0; i < addresses.length; i++) {
@@ -174,7 +174,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
         }
 
         // Update global tracking
-        globalMintedInPeriod += totalAmount;
-        mintingOccurredThisPeriod = true;
+        totalBatchMintedInPeriod += totalAmount;
+        batchMintingOccurredThisPeriod = true;
     }
 }
