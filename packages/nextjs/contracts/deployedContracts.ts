@@ -729,6 +729,16 @@ const deployedContracts = {
         },
         {
           inputs: [],
+          name: "CannotMintToZeroAddress",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "CannotSetZeroAddress",
+          type: "error",
+        },
+        {
+          inputs: [],
           name: "CooldownNotExpired",
           type: "error",
         },
@@ -840,11 +850,6 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "MintToZeroAddress",
-          type: "error",
-        },
-        {
-          inputs: [],
           name: "MintingCurrentlyPaused",
           type: "error",
         },
@@ -888,11 +893,6 @@ const deployedContracts = {
         {
           inputs: [],
           name: "UnauthorizedRpcBreadMinter",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "ZeroAddress",
           type: "error",
         },
         {

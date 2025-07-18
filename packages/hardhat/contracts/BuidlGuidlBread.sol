@@ -6,33 +6,30 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract BuidlGuidlBread is ERC20, Ownable {
     event Mint(address indexed user, uint256 amount);
-    event PenaltyBurn(address indexed target, uint256 amount);
     event MintLimitUpdated(uint256 newLimit);
     event MintingPaused(uint256 endTime);
     event MintingPeriodCompleted(uint256 timestamp);
 
-    error ZeroAddress();
+    error CannotSetZeroAddress();
     error MintLimitCannotBeZero();
     error UnauthorizedRpcBreadMinter();
     error UnauthorizedPause();
     error CooldownNotExpired();
     error MintAmountExceedsGlobalLimit();
-    error PeriodCompletionPaused();
+    error MintingPeriodCompletionPaused();
     error NoMintingOccurredThisPeriod();
     error ArrayLengthMismatch();
     error EmptyArrays();
     error BatchSizeTooLarge();
-    error MintingCurrentlyPaused();
-    error InvalidAmount();
-    error MintToZeroAddress();
+    error MintingPaused();
+    error CannotMintZeroAmount();
+    error CannotMintToZeroAddress();
 
+    uint256 public constant MINT_COOLDOWN = 23 hours;
+    uint256 public mintLimit = 420 ether;    
+    uint256 public pauseEndTime = 0;
     address public rpcBreadMinterAddress;
     address public pauseAddress;
-    uint256 public mintLimit = 420 * 10 ** 18; // 420 Bread with 18 decimals
-    uint256 public constant MINT_COOLDOWN = 23 hours;
-    uint256 public pauseEndTime = 0;
-
-    // Global rate limiting instead of per-address
     uint256 public lastGlobalMintTime;
     uint256 public globalMintedInPeriod;
     bool public mintingOccurredThisPeriod;
@@ -40,24 +37,22 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @param initialOwner The address that will own the contract and receive initial tokens
     /// @param rpcBreadMinterAddress_ The address authorized to perform batch mint/burn operations
     /// @param pauseAddress_ The address authorized to pause minting
-    /// @dev Mints 1,000,000 tokens to the initial owner and sets up the contract
     constructor(
         address initialOwner,
         address rpcBreadMinterAddress_,
         address pauseAddress_
     ) ERC20("BuidlGuidl Bread", "BGBRD") Ownable(initialOwner) {
-        if (rpcBreadMinterAddress_ == address(0)) revert ZeroAddress();
-        if (pauseAddress_ == address(0)) revert ZeroAddress();
+        if (rpcBreadMinterAddress_ == address(0)) revert CannotSetZeroAddress();
+        if (pauseAddress_ == address(0)) revert CannotSetZeroAddress();
         rpcBreadMinterAddress = rpcBreadMinterAddress_;
         pauseAddress = pauseAddress_;
-        _mint(initialOwner, 1000000 * 10 ** 18);
     }
 
     /// @notice Updates the RPC Bread Minter address
     /// @param newAddress The new address that will be authorized to perform batch operations
     /// @dev Only the contract owner can call this function
     function setRpcBreadMinterAddress(address newAddress) public onlyOwner {
-        if (newAddress == address(0)) revert ZeroAddress();
+        if (newAddress == address(0)) revert CannotSetZeroAddress();
         rpcBreadMinterAddress = newAddress;
     }
 
@@ -65,7 +60,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @param newAddress The new address that will be authorized to perform pauses
     /// @dev Only the contract owner can call this function
     function setPauseAddress(address newAddress) public onlyOwner {
-        if (newAddress == address(0)) revert ZeroAddress();
+        if (newAddress == address(0)) revert CannotSetZeroAddress();
         pauseAddress = newAddress;
     }
 
@@ -138,7 +133,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
     /// @dev Only the RPC Bread Minter can call this function after minting has occurred
     /// @dev Blocked when minting is paused to prevent period reset during emergency
     function completeMintingPeriod() public onlyRpcBreadMinter {
-        if (block.timestamp < pauseEndTime) revert PeriodCompletionPaused();
+        if (block.timestamp < pauseEndTime) revert MintingPeriodCompletionPaused();
         if (!mintingOccurredThisPeriod) revert NoMintingOccurredThisPeriod();
         
         // Reset the period
@@ -159,12 +154,12 @@ contract BuidlGuidlBread is ERC20, Ownable {
         if (addresses.length != amounts.length) revert ArrayLengthMismatch();
         if (addresses.length == 0) revert EmptyArrays();
         if (addresses.length > 100) revert BatchSizeTooLarge(); // Prevent gas issues with large arrays
-        if (block.timestamp < pauseEndTime) revert MintingCurrentlyPaused();
+        if (block.timestamp < pauseEndTime) revert MintingPaused();
 
         // Calculate total amount to check against global limit
         uint256 totalAmount = 0;
         for (uint256 i = 0; i < amounts.length; i++) {
-            if (amounts[i] == 0) revert InvalidAmount();
+            if (amounts[i] == 0) revert CannotMintZeroAmount();
             totalAmount += amounts[i];
         }
 
@@ -173,7 +168,7 @@ contract BuidlGuidlBread is ERC20, Ownable {
 
         // Perform the mints
         for (uint256 i = 0; i < addresses.length; i++) {
-            if (addresses[i] == address(0)) revert MintToZeroAddress();
+            if (addresses[i] == address(0)) revert CannotMintToZeroAddress();
             _mint(addresses[i], amounts[i]);
             emit Mint(addresses[i], amounts[i]);
         }
