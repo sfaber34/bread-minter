@@ -528,9 +528,9 @@ describe("BuidlGuidlBread Contract", function () {
     });
   });
 
-  describe("Global Rate Limiting Functions", function () {
+  describe("Batch Minting Rate Limiting Functions", function () {
     describe("getRemainingBatchMintCooldown", function () {
-      it("Should return 0 when no global minting has occurred", async function () {
+      it("Should return 0 when no batch minting has occurred", async function () {
         const { buidlGuidlBread } = await loadFixture(deployBuidlGuidlBreadFixture);
 
         expect(await buidlGuidlBread.getRemainingBatchMintCooldown()).to.equal(0);
@@ -561,7 +561,7 @@ describe("BuidlGuidlBread Contract", function () {
     });
 
     describe("getTotalBatchMintedInPeriod", function () {
-      it("Should return 0 when no global minting has occurred", async function () {
+      it("Should return 0 when no batch minting has occurred", async function () {
         const { buidlGuidlBread } = await loadFixture(deployBuidlGuidlBreadFixture);
 
         expect(await buidlGuidlBread.getTotalBatchMintedInPeriod()).to.equal(0);
@@ -597,7 +597,7 @@ describe("BuidlGuidlBread Contract", function () {
     });
 
     describe("getRemainingBatchMintAmount", function () {
-      it("Should return full mint limit when no global minting has occurred", async function () {
+      it("Should return full mint limit when no batch minting has occurred", async function () {
         const { buidlGuidlBread } = await loadFixture(deployBuidlGuidlBreadFixture);
 
         expect(await buidlGuidlBread.getRemainingBatchMintAmount()).to.equal(parseEther("420"));
@@ -611,7 +611,7 @@ describe("BuidlGuidlBread Contract", function () {
         expect(await buidlGuidlBread.getRemainingBatchMintAmount()).to.equal(parseEther("320"));
       });
 
-      it("Should return 0 when global mint limit is reached", async function () {
+      it("Should return 0 when batch mint limit is reached", async function () {
         const { buidlGuidlBread, rpcBreadMinter, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
         await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("420")]);
@@ -800,7 +800,7 @@ describe("BuidlGuidlBread Contract", function () {
         expect(await buidlGuidlBread.batchMintingOccurredThisPeriod()).to.equal(true);
       });
 
-      it("Should enforce global rate limiting", async function () {
+      it("Should enforce batch minting rate limiting", async function () {
         const { buidlGuidlBread, rpcBreadMinter, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
         // Mint 200 tokens to user1
@@ -812,7 +812,7 @@ describe("BuidlGuidlBread Contract", function () {
         ).to.be.revertedWithCustomError(buidlGuidlBread, "BatchMintAmountExceedsLimit");
       });
 
-      it("Should allow minting up to the global limit", async function () {
+      it("Should allow minting up to the batch mint limit", async function () {
         const { buidlGuidlBread, rpcBreadMinter, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
         await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("200")]);
@@ -902,11 +902,11 @@ describe("BuidlGuidlBread Contract", function () {
         ).to.be.revertedWithCustomError(buidlGuidlBread, "BatchSizeTooLarge");
       });
 
-      it("Should check global limit for total amount in batch", async function () {
+      it("Should check batch mint limit for total amount in batch", async function () {
         const { buidlGuidlBread, rpcBreadMinter, user1, user2, user3 } =
           await loadFixture(deployBuidlGuidlBreadFixture);
 
-        // Try to mint a batch that exceeds the global limit
+        // Try to mint a batch that exceeds the batch mint limit
         const addresses = [user1.address, user2.address, user3.address];
         const amounts = [parseEther("200"), parseEther("200"), parseEther("200")]; // Total 600 > 420 limit
 
@@ -965,7 +965,7 @@ describe("BuidlGuidlBread Contract", function () {
       // Total supply should increase
       expect(await buidlGuidlBread.totalSupply()).to.equal(parseEther("120"));
 
-      // Check global minted amount
+      // Check batch minted amount
       expect(await buidlGuidlBread.getTotalBatchMintedInPeriod()).to.equal(parseEther("120"));
 
       // Complete the period
@@ -990,7 +990,7 @@ describe("BuidlGuidlBread Contract", function () {
       expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("40"));
     });
 
-    it("Should respect global rate limits with new flow", async function () {
+    it("Should respect batch minting rate limits with new flow", async function () {
       const { buidlGuidlBread, rpcBreadMinter, user1, user2, user3 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
       // Mint up to limit in multiple transactions
@@ -1098,7 +1098,7 @@ describe("BuidlGuidlBread Contract", function () {
       await expect(buidlGuidlBread.connect(rpcBreadMinter).batchMint(addresses, amounts)).to.not.be.reverted;
     });
 
-    it("Should handle global rate limit boundary conditions", async function () {
+    it("Should handle batch mint limit boundary conditions", async function () {
       const { buidlGuidlBread, rpcBreadMinter, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
       // Mint exactly the limit
@@ -1147,7 +1147,7 @@ describe("BuidlGuidlBread Contract", function () {
         .withArgs(user1.address, parseEther("50"));
     });
 
-    it("Should prevent sybil attacks via global rate limiting (prevents creating many addresses to bypass per-address limits)", async function () {
+    it("Should prevent sybil attacks via batch minting rate limiting (prevents creating many addresses to bypass per-address limits)", async function () {
       const { buidlGuidlBread, rpcBreadMinter, user1, user2, user3 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
       // Create many different addresses (simulating hacker creating many accounts)
@@ -1156,12 +1156,12 @@ describe("BuidlGuidlBread Contract", function () {
         .map(() => ethers.Wallet.createRandom().address);
       const amounts = Array(50).fill(parseEther("10")); // Total 500, exceeds 420 limit
 
-      // Should reject the large batch that exceeds global limit
+      // Should reject the large batch that exceeds batch mint limit
       await expect(
         buidlGuidlBread.connect(rpcBreadMinter).batchMint(manyAddresses, amounts),
       ).to.be.revertedWithCustomError(buidlGuidlBread, "BatchMintAmountExceedsLimit");
 
-      // Even if done in smaller batches to different addresses, global limit still applies
+      // Even if done in smaller batches to different addresses, batch mint limit still applies
       await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("200")]);
       await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user2.address], [parseEther("220")]);
 
