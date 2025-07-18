@@ -41,6 +41,8 @@ describe("BuidlGuidlBread Contract", function () {
       expect(await buidlGuidlBread.pauseAddress()).to.equal(pauseAddress.address);
       expect(await buidlGuidlBread.batchMintLimit()).to.equal(parseEther("420"));
       expect(await buidlGuidlBread.BATCH_MINT_COOLDOWN()).to.equal(82800); // 23 hours
+      expect(await buidlGuidlBread.OWNER_MINT_COOLDOWN()).to.equal(86400); // 24 hours
+      expect(await buidlGuidlBread.OWNER_MINT_LIMIT()).to.equal(parseEther("10000"));
       expect(await buidlGuidlBread.pauseEndTime()).to.equal(0);
       expect(await buidlGuidlBread.batchMintingOccurredThisPeriod()).to.equal(false);
     });
@@ -179,6 +181,251 @@ describe("BuidlGuidlBread Contract", function () {
     });
   });
 
+  describe("Owner Minting", function () {
+    describe("ownerMint", function () {
+      it("Should allow owner to mint tokens", async function () {
+        const { buidlGuidlBread, owner, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        const amount = parseEther("1000");
+        await expect(buidlGuidlBread.connect(owner).ownerMint(user1.address, amount))
+          .to.emit(buidlGuidlBread, "OwnerMint")
+          .withArgs(user1.address, amount);
+
+        expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(amount);
+        expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(amount);
+      });
+
+      it("Should reject non-owner attempts to mint", async function () {
+        const { buidlGuidlBread, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        await expect(
+          buidlGuidlBread.connect(user1).ownerMint(user2.address, parseEther("100")),
+        ).to.be.revertedWithCustomError(buidlGuidlBread, "OwnableUnauthorizedAccount");
+      });
+
+      it("Should reject zero amount", async function () {
+        const { buidlGuidlBread, owner, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        await expect(buidlGuidlBread.connect(owner).ownerMint(user1.address, 0)).to.be.revertedWithCustomError(
+          buidlGuidlBread,
+          "CannotMintZeroAmount",
+        );
+      });
+
+      it("Should reject zero address", async function () {
+        const { buidlGuidlBread, owner } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        await expect(
+          buidlGuidlBread.connect(owner).ownerMint(ethers.ZeroAddress, parseEther("100")),
+        ).to.be.revertedWithCustomError(buidlGuidlBread, "CannotMintToZeroAddress");
+      });
+
+      it("Should enforce owner mint limit within period", async function () {
+        const { buidlGuidlBread, owner, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        // Mint up to limit
+        await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("10000"));
+
+        // Try to mint more in same period - should fail
+        await expect(
+          buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("1")),
+        ).to.be.revertedWithCustomError(buidlGuidlBread, "OwnerMintAmountExceedsLimit");
+      });
+
+      it("Should reject minting more than limit in single transaction", async function () {
+        const { buidlGuidlBread, owner, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        await expect(
+          buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("10001")),
+        ).to.be.revertedWithCustomError(buidlGuidlBread, "OwnerMintAmountExceedsLimit");
+      });
+
+      it("Should allow minting after cooldown period", async function () {
+        const { buidlGuidlBread, owner, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        // First mint
+        await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("5000"));
+
+        // Fast forward past cooldown (24 hours + 1 second)
+        await time.increase(86401);
+
+        // Should be able to mint again
+        await buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("3000"));
+
+        expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("5000"));
+        expect(await buidlGuidlBread.balanceOf(user2.address)).to.equal(parseEther("3000"));
+      });
+
+      it("Should reset period tracking after cooldown", async function () {
+        const { buidlGuidlBread, owner, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        // First mint
+        await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("8000"));
+        expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("8000"));
+
+        // Fast forward past cooldown
+        await time.increase(86401);
+
+        // Next mint should reset the period
+        await buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("2000"));
+        expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("2000"));
+      });
+
+      it("Should respect pause functionality", async function () {
+        const { buidlGuidlBread, owner, pauseAddress, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        // Pause minting
+        await buidlGuidlBread.connect(pauseAddress).pauseMinting();
+
+        // Try to mint - should fail
+        await expect(
+          buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("100")),
+        ).to.be.revertedWithCustomError(buidlGuidlBread, "CannotMintWhilePaused");
+      });
+
+      it("Should allow minting after pause expires", async function () {
+        const { buidlGuidlBread, owner, pauseAddress, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        // Pause minting
+        await buidlGuidlBread.connect(pauseAddress).pauseMinting();
+
+        // Fast forward past pause period (24 hours + 1 second)
+        await time.increase(86401);
+
+        // Should be able to mint again
+        await expect(buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("100")))
+          .to.emit(buidlGuidlBread, "OwnerMint")
+          .withArgs(user1.address, parseEther("100"));
+      });
+
+      it("Should allow multiple mints within period up to limit", async function () {
+        const { buidlGuidlBread, owner, user1, user2, user3 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+        await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("3000"));
+        await buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("4000"));
+        await buidlGuidlBread.connect(owner).ownerMint(user3.address, parseEther("3000"));
+
+        expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("3000"));
+        expect(await buidlGuidlBread.balanceOf(user2.address)).to.equal(parseEther("4000"));
+        expect(await buidlGuidlBread.balanceOf(user3.address)).to.equal(parseEther("3000"));
+        expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("10000"));
+      });
+    });
+
+    describe("Owner mint helper functions", function () {
+      describe("getOwnerMintRemainingCooldown", function () {
+        it("Should return 0 when no owner minting has occurred", async function () {
+          const { buidlGuidlBread } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          expect(await buidlGuidlBread.getOwnerMintRemainingCooldown()).to.equal(0);
+        });
+
+        it("Should return correct cooldown after minting", async function () {
+          const { buidlGuidlBread, owner, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("1000"));
+
+          const remainingCooldown = await buidlGuidlBread.getOwnerMintRemainingCooldown();
+          expect(remainingCooldown).to.be.greaterThan(0);
+          expect(remainingCooldown).to.be.lessThanOrEqual(86400); // 24 hours
+        });
+
+        it("Should return 0 after cooldown period expires", async function () {
+          const { buidlGuidlBread, owner, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("1000"));
+
+          // Fast forward past cooldown period (24 hours + 1 second)
+          await time.increase(86401);
+
+          expect(await buidlGuidlBread.getOwnerMintRemainingCooldown()).to.equal(0);
+        });
+      });
+
+      describe("getTotalOwnerMintedInPeriod", function () {
+        it("Should return 0 when no owner minting has occurred", async function () {
+          const { buidlGuidlBread } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(0);
+        });
+
+        it("Should return correct amount after minting", async function () {
+          const { buidlGuidlBread, owner, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          const amount = parseEther("1500");
+          await buidlGuidlBread.connect(owner).ownerMint(user1.address, amount);
+
+          expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(amount);
+        });
+
+        it("Should accumulate multiple mints in the same period", async function () {
+          const { buidlGuidlBread, owner, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("2000"));
+          await buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("3000"));
+
+          expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("5000"));
+        });
+
+        it("Should reset after cooldown period", async function () {
+          const { buidlGuidlBread, owner, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("5000"));
+          expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("5000"));
+
+          // Fast forward past cooldown
+          await time.increase(86401);
+
+          // Next mint should reset period tracking
+          await buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("1000"));
+          expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("1000"));
+        });
+      });
+
+      describe("getRemainingOwnerMintAmount", function () {
+        it("Should return full mint limit when no owner minting has occurred", async function () {
+          const { buidlGuidlBread } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          expect(await buidlGuidlBread.getRemainingOwnerMintAmount()).to.equal(parseEther("10000"));
+        });
+
+        it("Should return correct remaining amount after minting", async function () {
+          const { buidlGuidlBread, owner, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("3000"));
+
+          expect(await buidlGuidlBread.getRemainingOwnerMintAmount()).to.equal(parseEther("7000"));
+        });
+
+        it("Should return 0 when owner mint limit is reached", async function () {
+          const { buidlGuidlBread, owner, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("10000"));
+
+          expect(await buidlGuidlBread.getRemainingOwnerMintAmount()).to.equal(0);
+        });
+
+        it("Should return full limit after cooldown period and next mint", async function () {
+          const { buidlGuidlBread, owner, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+          await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("8000"));
+          expect(await buidlGuidlBread.getRemainingOwnerMintAmount()).to.equal(parseEther("2000"));
+
+          // Fast forward past cooldown
+          await time.increase(86401);
+
+          // The view function doesn't reset period automatically - it only shows current state
+          expect(await buidlGuidlBread.getRemainingOwnerMintAmount()).to.equal(parseEther("2000"));
+
+          // But after the next mint, the period should reset and tracking should reflect new period
+          await buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("1000"));
+          expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("1000"));
+          expect(await buidlGuidlBread.getRemainingOwnerMintAmount()).to.equal(parseEther("9000"));
+        });
+      });
+    });
+  });
+
   describe("Pause Functionality", function () {
     describe("pauseMinting", function () {
       it("Should allow pause address to pause minting for 24 hours", async function () {
@@ -238,7 +485,7 @@ describe("BuidlGuidlBread Contract", function () {
 
         // Should be able to mint again
         await expect(buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]))
-          .to.emit(buidlGuidlBread, "Mint")
+          .to.emit(buidlGuidlBread, "BatchMint")
           .withArgs(user1.address, parseEther("50"));
 
         expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("50"));
@@ -275,18 +522,18 @@ describe("BuidlGuidlBread Contract", function () {
 
         // Should be able to mint normally
         await expect(buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]))
-          .to.emit(buidlGuidlBread, "Mint")
+          .to.emit(buidlGuidlBread, "BatchMint")
           .withArgs(user1.address, parseEther("50"));
       });
     });
   });
 
   describe("Global Rate Limiting Functions", function () {
-    describe("getRemainingCooldown", function () {
+    describe("getRemainingBatchMintCooldown", function () {
       it("Should return 0 when no global minting has occurred", async function () {
         const { buidlGuidlBread } = await loadFixture(deployBuidlGuidlBreadFixture);
 
-        expect(await buidlGuidlBread.getRemainingCooldown()).to.equal(0);
+        expect(await buidlGuidlBread.getRemainingBatchMintCooldown()).to.equal(0);
       });
 
       it("Should return correct cooldown after period reset", async function () {
@@ -295,7 +542,7 @@ describe("BuidlGuidlBread Contract", function () {
         await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]);
         await buidlGuidlBread.connect(rpcBreadMinter).completeBatchMintingPeriod();
 
-        const remainingCooldown = await buidlGuidlBread.getRemainingCooldown();
+        const remainingCooldown = await buidlGuidlBread.getRemainingBatchMintCooldown();
         expect(remainingCooldown).to.be.greaterThan(0);
         expect(remainingCooldown).to.be.lessThanOrEqual(82800); // 23 hours
       });
@@ -309,7 +556,7 @@ describe("BuidlGuidlBread Contract", function () {
         // Fast forward past cooldown period (23 hours + 1 second)
         await time.increase(82801);
 
-        expect(await buidlGuidlBread.getRemainingCooldown()).to.equal(0);
+        expect(await buidlGuidlBread.getRemainingBatchMintCooldown()).to.equal(0);
       });
     });
 
@@ -531,7 +778,7 @@ describe("BuidlGuidlBread Contract", function () {
 
         const amount = parseEther("50");
         await expect(buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [amount]))
-          .to.emit(buidlGuidlBread, "Mint")
+          .to.emit(buidlGuidlBread, "BatchMint")
           .withArgs(user1.address, amount);
 
         expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(amount);
@@ -675,7 +922,7 @@ describe("BuidlGuidlBread Contract", function () {
       const { buidlGuidlBread, rpcBreadMinter, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
 
       // Step 1: Check readiness (should be 0 initially)
-      expect(await buidlGuidlBread.getRemainingCooldown()).to.equal(0);
+      expect(await buidlGuidlBread.getRemainingBatchMintCooldown()).to.equal(0);
 
       // Step 2: Mint tokens
       await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("200")]);
@@ -785,6 +1032,56 @@ describe("BuidlGuidlBread Contract", function () {
       await buidlGuidlBread.connect(owner).setPauseAddress(user1.address);
       expect(await buidlGuidlBread.pauseAddress()).to.equal(user1.address);
     });
+
+    it("Should handle owner minting alongside batch minting", async function () {
+      const { buidlGuidlBread, owner, rpcBreadMinter, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+      // Owner mints some tokens
+      await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("5000"));
+      expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("5000"));
+
+      // Batch minter also mints tokens (independent limits)
+      await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user2.address], [parseEther("420")]);
+      expect(await buidlGuidlBread.balanceOf(user2.address)).to.equal(parseEther("420"));
+
+      // Both should have independent tracking
+      expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("5000"));
+      expect(await buidlGuidlBread.getTotalBatchMintedInPeriod()).to.equal(parseEther("420"));
+
+      // Total supply should be sum of both
+      expect(await buidlGuidlBread.totalSupply()).to.equal(parseEther("5420"));
+    });
+
+    it("Should handle owner minting with different cooldowns than batch minting", async function () {
+      const { buidlGuidlBread, owner, rpcBreadMinter, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+      // Both mint initially
+      await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("10000"));
+      await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user2.address], [parseEther("420")]);
+      await buidlGuidlBread.connect(rpcBreadMinter).completeBatchMintingPeriod();
+
+      // Fast forward 23 hours + 1 second (batch minting cooldown)
+      await time.increase(82801);
+
+      // Batch minting should be ready, owner minting should still be in cooldown
+      expect(await buidlGuidlBread.getRemainingBatchMintCooldown()).to.equal(0);
+      expect(await buidlGuidlBread.getOwnerMintRemainingCooldown()).to.be.greaterThan(0);
+
+      // Batch minting should work
+      await buidlGuidlBread.connect(rpcBreadMinter).batchMint([user2.address], [parseEther("100")]);
+
+      // Owner minting should still fail
+      await expect(
+        buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("1")),
+      ).to.be.revertedWithCustomError(buidlGuidlBread, "OwnerMintAmountExceedsLimit");
+
+      // Fast forward another hour to complete owner cooldown (24 hours total)
+      await time.increase(3600);
+
+      // Now owner minting should work too
+      await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("2000"));
+      expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("2000"));
+    });
   });
 
   describe("Edge Cases", function () {
@@ -817,13 +1114,13 @@ describe("BuidlGuidlBread Contract", function () {
       await time.increase(82799);
 
       // Should still be in cooldown (1 second remaining)
-      expect(await buidlGuidlBread.getRemainingCooldown()).to.equal(1);
+      expect(await buidlGuidlBread.getRemainingBatchMintCooldown()).to.equal(1);
 
       // Fast forward past cooldown
       await time.increase(1);
 
       // Now should be able to mint again (cooldown is over)
-      expect(await buidlGuidlBread.getRemainingCooldown()).to.equal(0);
+      expect(await buidlGuidlBread.getRemainingBatchMintCooldown()).to.equal(0);
       expect(await buidlGuidlBread.getRemainingBatchMintAmount()).to.equal(parseEther("420"));
     });
 
@@ -846,7 +1143,7 @@ describe("BuidlGuidlBread Contract", function () {
 
       // Should be able to mint again
       await expect(buidlGuidlBread.connect(rpcBreadMinter).batchMint([user1.address], [parseEther("50")]))
-        .to.emit(buidlGuidlBread, "Mint")
+        .to.emit(buidlGuidlBread, "BatchMint")
         .withArgs(user1.address, parseEther("50"));
     });
 
@@ -934,6 +1231,88 @@ describe("BuidlGuidlBread Contract", function () {
 
       // But owner multisig would have rotated keys by now, limiting damage to max 420 tokens
       expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("420"));
+    });
+
+    it("Should handle owner mint edge cases correctly", async function () {
+      const { buidlGuidlBread, owner, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+      // Test exact limit mint
+      await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("10000"));
+      expect(await buidlGuidlBread.getRemainingOwnerMintAmount()).to.equal(0);
+
+      // Fast forward to just before cooldown expires (24 hours - 10 seconds for safety)
+      await time.increase(86390);
+
+      // Should still be in cooldown
+      expect(await buidlGuidlBread.getOwnerMintRemainingCooldown()).to.equal(10);
+
+      // Try to mint more - should fail since we're still in cooldown period
+      await expect(
+        buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("1")),
+      ).to.be.revertedWithCustomError(buidlGuidlBread, "OwnerMintAmountExceedsLimit");
+
+      // Fast forward past cooldown
+      await time.increase(10);
+
+      // Now should be able to mint again (cooldown expired)
+      expect(await buidlGuidlBread.getOwnerMintRemainingCooldown()).to.equal(0);
+
+      // The view function still shows previous period's state until a mint happens
+      expect(await buidlGuidlBread.getRemainingOwnerMintAmount()).to.equal(0);
+
+      // But minting should succeed because the cooldown expired and period resets automatically
+      await buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("5000"));
+      expect(await buidlGuidlBread.balanceOf(user2.address)).to.equal(parseEther("5000"));
+
+      // Now the view functions should reflect the new period
+      expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("5000"));
+      expect(await buidlGuidlBread.getRemainingOwnerMintAmount()).to.equal(parseEther("5000"));
+    });
+
+    it("Should handle owner mint pause timing edge cases", async function () {
+      const { buidlGuidlBread, owner, pauseAddress, user1 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+      // Owner mints then pause immediately
+      await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("5000"));
+      await buidlGuidlBread.connect(pauseAddress).pauseMinting();
+
+      // Fast forward to near the end of both cooldowns (but still paused and in owner cooldown)
+      await time.increase(86390); // 24 hours - 10 seconds
+
+      // Should still be paused
+      await expect(
+        buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("1000")),
+      ).to.be.revertedWithCustomError(buidlGuidlBread, "CannotMintWhilePaused");
+
+      // Fast forward past pause (advance the remaining 10+ seconds to clear both pause and owner cooldown)
+      await time.increase(20);
+
+      // Should be able to mint again with reset period
+      await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("8000"));
+      expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("8000"));
+      expect(await buidlGuidlBread.balanceOf(user1.address)).to.equal(parseEther("13000"));
+    });
+
+    it("Should prevent owner mint limit boundary exploits", async function () {
+      const { buidlGuidlBread, owner, user1, user2 } = await loadFixture(deployBuidlGuidlBreadFixture);
+
+      // Mint just under limit
+      await buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("9999"));
+
+      // Try to mint 2 tokens (would exceed limit) - should fail
+      await expect(
+        buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("2")),
+      ).to.be.revertedWithCustomError(buidlGuidlBread, "OwnerMintAmountExceedsLimit");
+
+      // But should be able to mint exactly 1 token
+      await buidlGuidlBread.connect(owner).ownerMint(user2.address, parseEther("1"));
+      expect(await buidlGuidlBread.getTotalOwnerMintedInPeriod()).to.equal(parseEther("10000"));
+      expect(await buidlGuidlBread.getRemainingOwnerMintAmount()).to.equal(0);
+
+      // Any further minting should fail
+      await expect(
+        buidlGuidlBread.connect(owner).ownerMint(user1.address, parseEther("0.000000000000000001")),
+      ).to.be.revertedWithCustomError(buidlGuidlBread, "OwnerMintAmountExceedsLimit");
     });
   });
 });

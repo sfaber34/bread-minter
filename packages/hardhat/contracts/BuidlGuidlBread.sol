@@ -5,7 +5,8 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract BuidlGuidlBread is ERC20, Ownable {
-    event Mint(address indexed user, uint256 amount);
+    event BatchMint(address indexed user, uint256 amount);
+    event OwnerMint(address indexed to, uint256 amount);
     event BatchMintLimitUpdated(uint256 newLimit);
     event MintingPaused(uint256 endTime);
     event BatchMintingPeriodCompleted(uint256 timestamp);
@@ -24,14 +25,20 @@ contract BuidlGuidlBread is ERC20, Ownable {
     error CannotMintWhilePaused();
     error CannotMintZeroAmount();
     error CannotMintToZeroAddress();
+    error OwnerMintCooldownNotExpired();
+    error OwnerMintAmountExceedsLimit();
 
-    uint256 public constant BATCH_MINT_COOLDOWN = 23 hours;
-    uint256 public batchMintLimit = 420 ether;    
-    uint256 public pauseEndTime = 0;
     address public batchMinterAddress;
     address public pauseAddress;
+    uint256 public constant BATCH_MINT_COOLDOWN = 23 hours;
+    uint256 public constant OWNER_MINT_COOLDOWN = 24 hours;
+    uint256 public constant OWNER_MINT_LIMIT = 10_000 ether;
+    uint256 public batchMintLimit = 420 ether;
     uint256 public lastBatchMintTime;
-    uint256 public totalBatchMintedInPeriod;
+    uint256 public totalBatchMintedInPeriod;    
+    uint256 public lastOwnerMintTime;
+    uint256 public totalOwnerMintedInPeriod;
+    uint256 public pauseEndTime = 0;
     bool public batchMintingOccurredThisPeriod;
 
     /// @param initialOwner The address that will own the contract and receive initial tokens
@@ -94,9 +101,9 @@ contract BuidlGuidlBread is ERC20, Ownable {
         if (totalBatchMintedInPeriod + amount > batchMintLimit) revert BatchMintAmountExceedsLimit();
     }
 
-    /// @notice Returns the remaining cooldown time before minting can resume globally
+    /// @notice Returns the remaining cooldown time before batch minting can resume globally
     /// @return The number of seconds remaining in the cooldown period (0 if cooldown has passed)
-    function getRemainingCooldown() public view returns (uint256) {
+    function getRemainingBatchMintCooldown() public view returns (uint256) {
         uint256 timeSinceLastReset = block.timestamp - lastBatchMintTime;
 
         if (timeSinceLastReset >= BATCH_MINT_COOLDOWN) {
@@ -120,6 +127,34 @@ contract BuidlGuidlBread is ERC20, Ownable {
         }
 
         return batchMintLimit - totalBatchMintedInPeriod;
+    }
+
+    /// @notice Returns the remaining cooldown time before owner minting can resume
+    /// @return The number of seconds remaining in the owner mint cooldown period (0 if cooldown has passed)
+    function getOwnerMintRemainingCooldown() public view returns (uint256) {
+        uint256 timeSinceLastMint = block.timestamp - lastOwnerMintTime;
+
+        if (timeSinceLastMint >= OWNER_MINT_COOLDOWN) {
+            return 0;
+        }
+
+        return OWNER_MINT_COOLDOWN - timeSinceLastMint;
+    }
+
+    /// @notice Returns the amount of tokens owner minted in the current period
+    /// @return The amount of tokens owner minted in the current period
+    function getTotalOwnerMintedInPeriod() public view returns (uint256) {
+        return totalOwnerMintedInPeriod;
+    }
+
+    /// @notice Returns the remaining amount that can be owner minted in the current period
+    /// @return The amount of tokens that can still be owner minted in the current period
+    function getRemainingOwnerMintAmount() public view returns (uint256) {
+        if (totalOwnerMintedInPeriod >= OWNER_MINT_LIMIT) {
+            return 0;
+        }
+
+        return OWNER_MINT_LIMIT - totalOwnerMintedInPeriod;
     }
 
     /// @notice Pauses the minting functionality for 24 hours
@@ -170,11 +205,44 @@ contract BuidlGuidlBread is ERC20, Ownable {
         for (uint256 i = 0; i < addresses.length; i++) {
             if (addresses[i] == address(0)) revert CannotMintToZeroAddress();
             _mint(addresses[i], amounts[i]);
-            emit Mint(addresses[i], amounts[i]);
+            emit BatchMint(addresses[i], amounts[i]);
         }
 
         // Update global tracking
         totalBatchMintedInPeriod += totalAmount;
         batchMintingOccurredThisPeriod = true;
+    }
+
+    /// @notice Mints tokens to a single address (can be called by owner only)
+    /// @param to The address to mint tokens to
+    /// @param amount The amount of tokens to mint
+    /// @dev Only the contract owner can call this function
+    /// @dev Enforces 24-hour cooldown and owner mint limit
+    /// @dev Respects global pause functionality
+    function ownerMint(address to, uint256 amount) public onlyOwner {
+        if (block.timestamp < pauseEndTime) revert CannotMintWhilePaused();
+        if (amount == 0) revert CannotMintZeroAmount();
+        if (to == address(0)) revert CannotMintToZeroAddress();
+        
+        // If cooldown period has passed, reset the period
+        if (block.timestamp >= lastOwnerMintTime + OWNER_MINT_COOLDOWN) {
+            totalOwnerMintedInPeriod = 0;
+        } else {
+            // Still in cooldown period, check if we would exceed limit
+            if (totalOwnerMintedInPeriod + amount > OWNER_MINT_LIMIT) {
+                revert OwnerMintAmountExceedsLimit();
+            }
+        }
+        
+        // Check if amount would exceed limit for this period
+        if (amount > OWNER_MINT_LIMIT) revert OwnerMintAmountExceedsLimit();
+        
+        _mint(to, amount);
+        
+        // Update tracking
+        totalOwnerMintedInPeriod += amount;
+        lastOwnerMintTime = block.timestamp;
+        
+        emit OwnerMint(to, amount);
     }
 }

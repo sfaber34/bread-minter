@@ -15,17 +15,12 @@ export const OwnerWriteMethods = ({
 
   // List of known owner-only function names - add more as needed
   const ownerOnlyFunctions = [
-    "setRpcBreadMinterAddress",
-    "setMintLimit",
-    "setMintCooldown",
+    "ownerMint",
+    "setBatchMinterAddress",
+    "setPauseAddress",
+    "setBatchMintLimit",
     "transferOwnership",
     "renounceOwnership",
-    // Add other common Ownable functions
-    "pause",
-    "unpause",
-    "withdraw",
-    "setOwner",
-    "updateOwner",
   ];
 
   const functionsToDisplay = (

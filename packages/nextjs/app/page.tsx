@@ -55,15 +55,15 @@ const Home: NextPage = () => {
 
   const { data: mintEvents } = useScaffoldEventHistory({
     contractName: "BuidlGuidlBread",
-    eventName: "Mint",
+    eventName: "BatchMint",
     fromBlock: 0n,
     filters: { user: connectedAddress },
   });
 
-  // Listen for new Mint events
+  // Listen for new BatchMint events
   useScaffoldWatchContractEvent({
     contractName: "BuidlGuidlBread",
-    eventName: "Mint",
+    eventName: "BatchMint",
     onLogs: logs => {
       logs.forEach(async log => {
         // Only add events for the connected user
@@ -88,7 +88,7 @@ const Home: NextPage = () => {
               return prev;
             });
           } catch (error) {
-            console.error("Error processing new mint event:", error);
+            console.error("Error processing new batch mint event:", error);
           }
         }
       });
