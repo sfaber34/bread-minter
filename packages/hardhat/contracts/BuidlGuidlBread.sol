@@ -75,17 +75,6 @@ contract BuidlGuidlBread is ERC20, Ownable, IBuidlGuidlBread {
         emit MintingPaused(pauseEndTime);
     }
 
-    /// @dev Internal function to check and enforce batch mint rate limiting for token minting
-    /// @param amount The amount of tokens being minted
-    /// @notice Checks if cooldown has passed and validates amount against current period limit
-    function _checkBatchMintRateLimit(uint256 amount) internal view {
-        // Check if cooldown period has passed since last reset
-        if (block.timestamp < lastBatchMintTime + BATCH_MINT_COOLDOWN) revert BatchMintCooldownNotExpired();
-        
-        // Check if the amount would exceed the global limit for this period
-        if (totalBatchMintedInPeriod + amount > batchMintLimit) revert BatchMintAmountExceedsLimit();
-    }
-
     /// @notice Returns the remaining cooldown time before batch minting can resume globally
     /// @return The number of seconds remaining in the cooldown period (0 if cooldown has passed)
     function getRemainingBatchMintCooldown() public view returns (uint256) {
@@ -222,5 +211,16 @@ contract BuidlGuidlBread is ERC20, Ownable, IBuidlGuidlBread {
         lastOwnerMintTime = block.timestamp;
         
         emit OwnerMint(to, amount);
+    }
+
+    /// @dev Internal function to check and enforce batch mint rate limiting for token minting
+    /// @param amount The amount of tokens being minted
+    /// @notice Checks if cooldown has passed and validates amount against current period limit
+    function _checkBatchMintRateLimit(uint256 amount) internal view {
+        // Check if cooldown period has passed since last reset
+        if (block.timestamp < lastBatchMintTime + BATCH_MINT_COOLDOWN) revert BatchMintCooldownNotExpired();
+        
+        // Check if the amount would exceed the global limit for this period
+        if (totalBatchMintedInPeriod + amount > batchMintLimit) revert BatchMintAmountExceedsLimit();
     }
 }
