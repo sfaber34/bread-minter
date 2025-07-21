@@ -1,16 +1,76 @@
 {
-  "address": "0x00CE138f87Ba6715378e4F2896B549448C2f8016",
+  "address": "0xE20a0e016c84C9683B5F258f3ECCb0B365ffB8Fa",
   "abi": [
     {
       "inputs": [
         {
           "internalType": "address",
-          "name": "rpcBreadMinterAddress_",
+          "name": "initialOwner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "batchMinterAddress_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "pauseAddress_",
           "type": "address"
         }
       ],
       "stateMutability": "nonpayable",
       "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "ArrayLengthMismatch",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BatchMintAmountExceedsLimit",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BatchMintCooldownNotExpired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BatchMintLimitCannotBeZero",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BatchMintingPeriodCompletionPaused",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BatchSizeTooLarge",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CannotMintToZeroAddress",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CannotMintWhilePaused",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CannotMintZeroAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CannotSetZeroAddress",
+      "type": "error"
     },
     {
       "inputs": [
@@ -99,6 +159,16 @@
       "type": "error"
     },
     {
+      "inputs": [],
+      "name": "EmptyArrays",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoBatchMintingOccurredThisPeriod",
+      "type": "error"
+    },
+    {
       "inputs": [
         {
           "internalType": "address",
@@ -118,6 +188,26 @@
         }
       ],
       "name": "OwnableUnauthorizedAccount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OwnerMintAmountExceedsLimit",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OwnerMintCooldownNotExpired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "UnauthorizedBatchMinter",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "UnauthorizedPause",
       "type": "error"
     },
     {
@@ -149,19 +239,6 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "newCooldown",
-          "type": "uint256"
-        }
-      ],
-      "name": "CooldownUpdated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
           "indexed": true,
           "internalType": "address",
           "name": "user",
@@ -174,7 +251,7 @@
           "type": "uint256"
         }
       ],
-      "name": "Mint",
+      "name": "BatchMint",
       "type": "event"
     },
     {
@@ -187,7 +264,52 @@
           "type": "uint256"
         }
       ],
-      "name": "MintLimitUpdated",
+      "name": "BatchMintLimitUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "BatchMintingPeriodCompleted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "endTime",
+          "type": "uint256"
+        }
+      ],
+      "name": "MintingPaused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "OwnerMint",
       "type": "event"
     },
     {
@@ -215,25 +337,6 @@
         {
           "indexed": true,
           "internalType": "address",
-          "name": "target",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "PenaltyBurn",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
           "name": "from",
           "type": "address"
         },
@@ -252,6 +355,45 @@
       ],
       "name": "Transfer",
       "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "BATCH_MINT_COOLDOWN",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "OWNER_MINT_COOLDOWN",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "OWNER_MINT_LIMIT",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
       "inputs": [
@@ -333,25 +475,53 @@
           "type": "uint256[]"
         }
       ],
-      "name": "batchBurn",
+      "name": "batchMint",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
     {
-      "inputs": [
+      "inputs": [],
+      "name": "batchMintLimit",
+      "outputs": [
         {
-          "internalType": "address[]",
-          "name": "addresses",
-          "type": "address[]"
-        },
-        {
-          "internalType": "uint256[]",
-          "name": "amounts",
-          "type": "uint256[]"
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
-      "name": "batchMint",
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "batchMinterAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "batchMintingOccurredThisPeriod",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "completeBatchMintingPeriod",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -370,71 +540,8 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        }
-      ],
-      "name": "getMintedInPeriod",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        }
-      ],
-      "name": "getRemainingCooldown",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        }
-      ],
-      "name": "getRemainingMintAmount",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "lastMintTime",
+      "inputs": [],
+      "name": "getOwnerMintRemainingCooldown",
       "outputs": [
         {
           "internalType": "uint256",
@@ -447,7 +554,7 @@
     },
     {
       "inputs": [],
-      "name": "mintCooldown",
+      "name": "getRemainingBatchMintAmount",
       "outputs": [
         {
           "internalType": "uint256",
@@ -460,7 +567,7 @@
     },
     {
       "inputs": [],
-      "name": "mintLimit",
+      "name": "getRemainingBatchMintCooldown",
       "outputs": [
         {
           "internalType": "uint256",
@@ -472,14 +579,60 @@
       "type": "function"
     },
     {
-      "inputs": [
+      "inputs": [],
+      "name": "getRemainingOwnerMintAmount",
+      "outputs": [
         {
-          "internalType": "address",
+          "internalType": "uint256",
           "name": "",
-          "type": "address"
+          "type": "uint256"
         }
       ],
-      "name": "mintedInPeriod",
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getTotalBatchMintedInPeriod",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getTotalOwnerMintedInPeriod",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lastBatchMintTime",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lastOwnerMintTime",
       "outputs": [
         {
           "internalType": "uint256",
@@ -517,15 +670,26 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "renounceOwnership",
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ownerMint",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
     {
       "inputs": [],
-      "name": "rpcBreadMinterAddress",
+      "name": "pauseAddress",
       "outputs": [
         {
           "internalType": "address",
@@ -537,14 +701,28 @@
       "type": "function"
     },
     {
-      "inputs": [
+      "inputs": [],
+      "name": "pauseEndTime",
+      "outputs": [
         {
           "internalType": "uint256",
-          "name": "newCooldown",
+          "name": "",
           "type": "uint256"
         }
       ],
-      "name": "setMintCooldown",
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pauseMinting",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -557,7 +735,7 @@
           "type": "uint256"
         }
       ],
-      "name": "setMintLimit",
+      "name": "setBatchMintLimit",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -570,7 +748,20 @@
           "type": "address"
         }
       ],
-      "name": "setRpcBreadMinterAddress",
+      "name": "setBatchMinterAddress",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newAddress",
+          "type": "address"
+        }
+      ],
+      "name": "setPauseAddress",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -583,6 +774,32 @@
           "internalType": "string",
           "name": "",
           "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalBatchMintedInPeriod",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalOwnerMintedInPeriod",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -668,59 +885,47 @@
       "type": "function"
     }
   ],
-  "transactionHash": "0x4a61aa4c8ec0368d7f0eeba08475566dae1d33c9aadbde8eebdf42e7c73886c3",
+  "transactionHash": "0xf871e12900ce7ddc73738055cf733b6a4a7bfc538132fac222e53c9664bdb92b",
   "receipt": {
     "to": null,
     "from": "0x62a135110cA08Af9295688CAa60e758464Feae8f",
-    "contractAddress": "0x00CE138f87Ba6715378e4F2896B549448C2f8016",
-    "transactionIndex": 221,
-    "gasUsed": "1434752",
-    "logsBloom": "0x00000200000000000000000000000000000010000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000001000000000000000000000000000000000000020000000000000000000800000000000000001000000010000000400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000002000000000000000000000000040000000000000000000000000020000000000020000000000000000000000000000000000000000000000000000000",
-    "blockHash": "0x75ecff3755b906fa30253e535c5f2702c1de1e0673b6a72775b736d76ce64b55",
-    "transactionHash": "0x4a61aa4c8ec0368d7f0eeba08475566dae1d33c9aadbde8eebdf42e7c73886c3",
+    "contractAddress": "0xE20a0e016c84C9683B5F258f3ECCb0B365ffB8Fa",
+    "transactionIndex": 183,
+    "gasUsed": "1281637",
+    "logsBloom": "0x00000000000000000000000000000000000000000080000000800040000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000001000000000000000000000000000000000000020000000000000000000800000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010800080000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x64695ef6fae1d55b9c25ffa740909935bf951ce107c4e08b20c2c3294d4c8c48",
+    "transactionHash": "0xf871e12900ce7ddc73738055cf733b6a4a7bfc538132fac222e53c9664bdb92b",
     "logs": [
       {
-        "transactionIndex": 221,
-        "blockNumber": 32687413,
-        "transactionHash": "0x4a61aa4c8ec0368d7f0eeba08475566dae1d33c9aadbde8eebdf42e7c73886c3",
-        "address": "0x00CE138f87Ba6715378e4F2896B549448C2f8016",
+        "transactionIndex": 183,
+        "blockNumber": 33163828,
+        "transactionHash": "0xf871e12900ce7ddc73738055cf733b6a4a7bfc538132fac222e53c9664bdb92b",
+        "address": "0xE20a0e016c84C9683B5F258f3ECCb0B365ffB8Fa",
         "topics": [
           "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
           "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "0x00000000000000000000000062a135110ca08af9295688caa60e758464feae8f"
+          "0x0000000000000000000000008c4f1fb34565650e176d2cd2761b3be10ca8d35b"
         ],
         "data": "0x",
-        "logIndex": 979,
-        "blockHash": "0x75ecff3755b906fa30253e535c5f2702c1de1e0673b6a72775b736d76ce64b55"
-      },
-      {
-        "transactionIndex": 221,
-        "blockNumber": 32687413,
-        "transactionHash": "0x4a61aa4c8ec0368d7f0eeba08475566dae1d33c9aadbde8eebdf42e7c73886c3",
-        "address": "0x00CE138f87Ba6715378e4F2896B549448C2f8016",
-        "topics": [
-          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-          "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "0x00000000000000000000000062a135110ca08af9295688caa60e758464feae8f"
-        ],
-        "data": "0x00000000000000000000000000000000000000000000152d02c7e14af6800000",
-        "logIndex": 980,
-        "blockHash": "0x75ecff3755b906fa30253e535c5f2702c1de1e0673b6a72775b736d76ce64b55"
+        "logIndex": 637,
+        "blockHash": "0x64695ef6fae1d55b9c25ffa740909935bf951ce107c4e08b20c2c3294d4c8c48"
       }
     ],
-    "blockNumber": 32687413,
-    "cumulativeGasUsed": "61730792",
+    "blockNumber": 33163828,
+    "cumulativeGasUsed": "36737915",
     "status": 1,
     "byzantium": true
   },
   "args": [
-    "0xaC9A4652dF3878d24f35A6a6c022544aeE9748Ff"
+    "0x8c4f1FB34565650e176d2cd2761B3be10Ca8d35b",
+    "0xaC9A4652dF3878d24f35A6a6c022544aeE9748Ff",
+    "0x38c772B96D73733F425746bd368B4B4435A37967"
   ],
-  "numDeployments": 1,
-  "solcInputHash": "85e8418520db9e6a286a2f39bcabf0a7",
-  "metadata": "{\"compiler\":{\"version\":\"0.8.20+commit.a1b79de6\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"rpcBreadMinterAddress_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"allowance\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"needed\",\"type\":\"uint256\"}],\"name\":\"ERC20InsufficientAllowance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"needed\",\"type\":\"uint256\"}],\"name\":\"ERC20InsufficientBalance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"approver\",\"type\":\"address\"}],\"name\":\"ERC20InvalidApprover\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"ERC20InvalidReceiver\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"ERC20InvalidSender\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"ERC20InvalidSpender\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newCooldown\",\"type\":\"uint256\"}],\"name\":\"CooldownUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Mint\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newLimit\",\"type\":\"uint256\"}],\"name\":\"MintLimitUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"PenaltyBurn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"addresses\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"amounts\",\"type\":\"uint256[]\"}],\"name\":\"batchBurn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"addresses\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"amounts\",\"type\":\"uint256[]\"}],\"name\":\"batchMint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"getMintedInPeriod\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"getRemainingCooldown\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"getRemainingMintAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"lastMintTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"mintCooldown\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"mintLimit\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"mintedInPeriod\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rpcBreadMinterAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newCooldown\",\"type\":\"uint256\"}],\"name\":\"setMintCooldown\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newLimit\",\"type\":\"uint256\"}],\"name\":\"setMintLimit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddress\",\"type\":\"address\"}],\"name\":\"setRpcBreadMinterAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"errors\":{\"ERC20InsufficientAllowance(address,uint256,uint256)\":[{\"details\":\"Indicates a failure with the `spender`\\u2019s `allowance`. Used in transfers.\",\"params\":{\"allowance\":\"Amount of tokens a `spender` is allowed to operate with.\",\"needed\":\"Minimum amount required to perform a transfer.\",\"spender\":\"Address that may be allowed to operate on tokens without being their owner.\"}}],\"ERC20InsufficientBalance(address,uint256,uint256)\":[{\"details\":\"Indicates an error related to the current `balance` of a `sender`. Used in transfers.\",\"params\":{\"balance\":\"Current balance for the interacting account.\",\"needed\":\"Minimum amount required to perform a transfer.\",\"sender\":\"Address whose tokens are being transferred.\"}}],\"ERC20InvalidApprover(address)\":[{\"details\":\"Indicates a failure with the `approver` of a token to be approved. Used in approvals.\",\"params\":{\"approver\":\"Address initiating an approval operation.\"}}],\"ERC20InvalidReceiver(address)\":[{\"details\":\"Indicates a failure with the token `receiver`. Used in transfers.\",\"params\":{\"receiver\":\"Address to which tokens are being transferred.\"}}],\"ERC20InvalidSender(address)\":[{\"details\":\"Indicates a failure with the token `sender`. Used in transfers.\",\"params\":{\"sender\":\"Address whose tokens are being transferred.\"}}],\"ERC20InvalidSpender(address)\":[{\"details\":\"Indicates a failure with the `spender` to be approved. Used in approvals.\",\"params\":{\"spender\":\"Address that may be allowed to operate on tokens without being their owner.\"}}],\"OwnableInvalidOwner(address)\":[{\"details\":\"The owner is not a valid owner account. (eg. `address(0)`)\"}],\"OwnableUnauthorizedAccount(address)\":[{\"details\":\"The caller account is not authorized to perform an operation.\"}]},\"events\":{\"Approval(address,address,uint256)\":{\"details\":\"Emitted when the allowance of a `spender` for an `owner` is set by a call to {approve}. `value` is the new allowance.\"},\"Transfer(address,address,uint256)\":{\"details\":\"Emitted when `value` tokens are moved from one account (`from`) to another (`to`). Note that `value` may be zero.\"}},\"kind\":\"dev\",\"methods\":{\"allowance(address,address)\":{\"details\":\"See {IERC20-allowance}.\"},\"approve(address,uint256)\":{\"details\":\"See {IERC20-approve}. NOTE: If `value` is the maximum `uint256`, the allowance is not updated on `transferFrom`. This is semantically equivalent to an infinite approval. Requirements: - `spender` cannot be the zero address.\"},\"balanceOf(address)\":{\"details\":\"See {IERC20-balanceOf}.\"},\"batchBurn(address[],uint256[])\":{\"details\":\"Only the authorized RPC Bread Minter can call this functionUsed for penalty burns or other administrative token removalMaximum batch size is 100 to prevent gas issues\",\"params\":{\"addresses\":\"Array of addresses to burn tokens from\",\"amounts\":\"Array of amounts to burn (must match addresses array length)\"}},\"batchMint(address[],uint256[])\":{\"details\":\"Only the authorized RPC Bread Minter can call this functionEnforces rate limiting for each recipient and validates all inputsMaximum batch size is 100 to prevent gas issues\",\"params\":{\"addresses\":\"Array of recipient addresses\",\"amounts\":\"Array of amounts to mint (must match addresses array length)\"}},\"constructor\":{\"details\":\"Mints 100,000 tokens to the contract deployer and sets the initial minter address\",\"params\":{\"rpcBreadMinterAddress_\":\"The address authorized to perform batch mint/burn operations\"}},\"decimals()\":{\"details\":\"Returns the number of decimals used to get its user representation. For example, if `decimals` equals `2`, a balance of `505` tokens should be displayed to a user as `5.05` (`505 / 10 ** 2`). Tokens usually opt for a value of 18, imitating the relationship between Ether and Wei. This is the default value returned by this function, unless it's overridden. NOTE: This information is only used for _display_ purposes: it in no way affects any of the arithmetic of the contract, including {IERC20-balanceOf} and {IERC20-transfer}.\"},\"getMintedInPeriod(address)\":{\"params\":{\"user\":\"The address to check minted amount for\"},\"returns\":{\"_0\":\"The amount of tokens minted in the current cooldown period (0 if period has reset)\"}},\"getRemainingCooldown(address)\":{\"params\":{\"user\":\"The address to check cooldown for\"},\"returns\":{\"_0\":\"The number of seconds remaining in the cooldown period (0 if cooldown has passed)\"}},\"getRemainingMintAmount(address)\":{\"params\":{\"user\":\"The address to check remaining mint amount for\"},\"returns\":{\"_0\":\"The amount of tokens that can still be minted (full limit if period has reset)\"}},\"name()\":{\"details\":\"Returns the name of the token.\"},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.\"},\"setMintCooldown(uint256)\":{\"details\":\"Only the contract owner can call this function. Cooldown must be greater than 0\",\"params\":{\"newCooldown\":\"The new cooldown period in seconds\"}},\"setMintLimit(uint256)\":{\"details\":\"Only the contract owner can call this function. Limit must be greater than 0\",\"params\":{\"newLimit\":\"The new mint limit in wei (with 18 decimals)\"}},\"setRpcBreadMinterAddress(address)\":{\"details\":\"Only the contract owner can call this function\",\"params\":{\"newAddress\":\"The new address that will be authorized to perform batch operations\"}},\"symbol()\":{\"details\":\"Returns the symbol of the token, usually a shorter version of the name.\"},\"totalSupply()\":{\"details\":\"See {IERC20-totalSupply}.\"},\"transfer(address,uint256)\":{\"details\":\"See {IERC20-transfer}. Requirements: - `to` cannot be the zero address. - the caller must have a balance of at least `value`.\"},\"transferFrom(address,address,uint256)\":{\"details\":\"See {IERC20-transferFrom}. Emits an {Approval} event indicating the updated allowance. This is not required by the EIP. See the note at the beginning of {ERC20}. NOTE: Does not update the allowance if the current allowance is the maximum `uint256`. Requirements: - `from` and `to` cannot be the zero address. - `from` must have a balance of at least `value`. - the caller must have allowance for ``from``'s tokens of at least `value`.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"batchBurn(address[],uint256[])\":{\"notice\":\"Burns tokens from multiple addresses in a single transaction\"},\"batchMint(address[],uint256[])\":{\"notice\":\"Mints tokens to multiple addresses in a single transaction\"},\"getMintedInPeriod(address)\":{\"notice\":\"Returns the amount of tokens minted by a user in the current period\"},\"getRemainingCooldown(address)\":{\"notice\":\"Returns the remaining cooldown time for a user before they can mint again\"},\"getRemainingMintAmount(address)\":{\"notice\":\"Returns the remaining amount that can be minted by a user in the current period\"},\"setMintCooldown(uint256)\":{\"notice\":\"Sets the cooldown period between mint limit resets\"},\"setMintLimit(uint256)\":{\"notice\":\"Sets the maximum amount that can be minted per cooldown period\"},\"setRpcBreadMinterAddress(address)\":{\"notice\":\"Updates the RPC Bread Minter address\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/BuidlGuidlBread.sol\":\"BuidlGuidlBread\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/access/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (access/Ownable.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {Context} from \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * The initial owner is set to the address provided by the deployer. This can\\n * later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\nabstract contract Ownable is Context {\\n    address private _owner;\\n\\n    /**\\n     * @dev The caller account is not authorized to perform an operation.\\n     */\\n    error OwnableUnauthorizedAccount(address account);\\n\\n    /**\\n     * @dev The owner is not a valid owner account. (eg. `address(0)`)\\n     */\\n    error OwnableInvalidOwner(address owner);\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the address provided by the deployer as the initial owner.\\n     */\\n    constructor(address initialOwner) {\\n        if (initialOwner == address(0)) {\\n            revert OwnableInvalidOwner(address(0));\\n        }\\n        _transferOwnership(initialOwner);\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        _checkOwner();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if the sender is not the owner.\\n     */\\n    function _checkOwner() internal view virtual {\\n        if (owner() != _msgSender()) {\\n            revert OwnableUnauthorizedAccount(_msgSender());\\n        }\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby disabling any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public virtual onlyOwner {\\n        _transferOwnership(address(0));\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        if (newOwner == address(0)) {\\n            revert OwnableInvalidOwner(address(0));\\n        }\\n        _transferOwnership(newOwner);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Internal function without access restriction.\\n     */\\n    function _transferOwnership(address newOwner) internal virtual {\\n        address oldOwner = _owner;\\n        _owner = newOwner;\\n        emit OwnershipTransferred(oldOwner, newOwner);\\n    }\\n}\\n\",\"keccak256\":\"0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb\",\"license\":\"MIT\"},\"@openzeppelin/contracts/interfaces/draft-IERC6093.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (interfaces/draft-IERC6093.sol)\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Standard ERC20 Errors\\n * Interface of the https://eips.ethereum.org/EIPS/eip-6093[ERC-6093] custom errors for ERC20 tokens.\\n */\\ninterface IERC20Errors {\\n    /**\\n     * @dev Indicates an error related to the current `balance` of a `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     * @param balance Current balance for the interacting account.\\n     * @param needed Minimum amount required to perform a transfer.\\n     */\\n    error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);\\n\\n    /**\\n     * @dev Indicates a failure with the token `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     */\\n    error ERC20InvalidSender(address sender);\\n\\n    /**\\n     * @dev Indicates a failure with the token `receiver`. Used in transfers.\\n     * @param receiver Address to which tokens are being transferred.\\n     */\\n    error ERC20InvalidReceiver(address receiver);\\n\\n    /**\\n     * @dev Indicates a failure with the `spender`\\u2019s `allowance`. Used in transfers.\\n     * @param spender Address that may be allowed to operate on tokens without being their owner.\\n     * @param allowance Amount of tokens a `spender` is allowed to operate with.\\n     * @param needed Minimum amount required to perform a transfer.\\n     */\\n    error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);\\n\\n    /**\\n     * @dev Indicates a failure with the `approver` of a token to be approved. Used in approvals.\\n     * @param approver Address initiating an approval operation.\\n     */\\n    error ERC20InvalidApprover(address approver);\\n\\n    /**\\n     * @dev Indicates a failure with the `spender` to be approved. Used in approvals.\\n     * @param spender Address that may be allowed to operate on tokens without being their owner.\\n     */\\n    error ERC20InvalidSpender(address spender);\\n}\\n\\n/**\\n * @dev Standard ERC721 Errors\\n * Interface of the https://eips.ethereum.org/EIPS/eip-6093[ERC-6093] custom errors for ERC721 tokens.\\n */\\ninterface IERC721Errors {\\n    /**\\n     * @dev Indicates that an address can't be an owner. For example, `address(0)` is a forbidden owner in EIP-20.\\n     * Used in balance queries.\\n     * @param owner Address of the current owner of a token.\\n     */\\n    error ERC721InvalidOwner(address owner);\\n\\n    /**\\n     * @dev Indicates a `tokenId` whose `owner` is the zero address.\\n     * @param tokenId Identifier number of a token.\\n     */\\n    error ERC721NonexistentToken(uint256 tokenId);\\n\\n    /**\\n     * @dev Indicates an error related to the ownership over a particular token. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     * @param tokenId Identifier number of a token.\\n     * @param owner Address of the current owner of a token.\\n     */\\n    error ERC721IncorrectOwner(address sender, uint256 tokenId, address owner);\\n\\n    /**\\n     * @dev Indicates a failure with the token `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     */\\n    error ERC721InvalidSender(address sender);\\n\\n    /**\\n     * @dev Indicates a failure with the token `receiver`. Used in transfers.\\n     * @param receiver Address to which tokens are being transferred.\\n     */\\n    error ERC721InvalidReceiver(address receiver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator`\\u2019s approval. Used in transfers.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     * @param tokenId Identifier number of a token.\\n     */\\n    error ERC721InsufficientApproval(address operator, uint256 tokenId);\\n\\n    /**\\n     * @dev Indicates a failure with the `approver` of a token to be approved. Used in approvals.\\n     * @param approver Address initiating an approval operation.\\n     */\\n    error ERC721InvalidApprover(address approver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator` to be approved. Used in approvals.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     */\\n    error ERC721InvalidOperator(address operator);\\n}\\n\\n/**\\n * @dev Standard ERC1155 Errors\\n * Interface of the https://eips.ethereum.org/EIPS/eip-6093[ERC-6093] custom errors for ERC1155 tokens.\\n */\\ninterface IERC1155Errors {\\n    /**\\n     * @dev Indicates an error related to the current `balance` of a `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     * @param balance Current balance for the interacting account.\\n     * @param needed Minimum amount required to perform a transfer.\\n     * @param tokenId Identifier number of a token.\\n     */\\n    error ERC1155InsufficientBalance(address sender, uint256 balance, uint256 needed, uint256 tokenId);\\n\\n    /**\\n     * @dev Indicates a failure with the token `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     */\\n    error ERC1155InvalidSender(address sender);\\n\\n    /**\\n     * @dev Indicates a failure with the token `receiver`. Used in transfers.\\n     * @param receiver Address to which tokens are being transferred.\\n     */\\n    error ERC1155InvalidReceiver(address receiver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator`\\u2019s approval. Used in transfers.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     * @param owner Address of the current owner of a token.\\n     */\\n    error ERC1155MissingApprovalForAll(address operator, address owner);\\n\\n    /**\\n     * @dev Indicates a failure with the `approver` of a token to be approved. Used in approvals.\\n     * @param approver Address initiating an approval operation.\\n     */\\n    error ERC1155InvalidApprover(address approver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator` to be approved. Used in approvals.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     */\\n    error ERC1155InvalidOperator(address operator);\\n\\n    /**\\n     * @dev Indicates an array length mismatch between ids and values in a safeBatchTransferFrom operation.\\n     * Used in batch transfers.\\n     * @param idsLength Length of the array of token identifiers\\n     * @param valuesLength Length of the array of token amounts\\n     */\\n    error ERC1155InvalidArrayLength(uint256 idsLength, uint256 valuesLength);\\n}\\n\",\"keccak256\":\"0x60c65f701957fdd6faea1acb0bb45825791d473693ed9ecb34726fdfaa849dd7\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/ERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/ERC20.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {IERC20} from \\\"./IERC20.sol\\\";\\nimport {IERC20Metadata} from \\\"./extensions/IERC20Metadata.sol\\\";\\nimport {Context} from \\\"../../utils/Context.sol\\\";\\nimport {IERC20Errors} from \\\"../../interfaces/draft-IERC6093.sol\\\";\\n\\n/**\\n * @dev Implementation of the {IERC20} interface.\\n *\\n * This implementation is agnostic to the way tokens are created. This means\\n * that a supply mechanism has to be added in a derived contract using {_mint}.\\n *\\n * TIP: For a detailed writeup see our guide\\n * https://forum.openzeppelin.com/t/how-to-implement-erc20-supply-mechanisms/226[How\\n * to implement supply mechanisms].\\n *\\n * The default value of {decimals} is 18. To change this, you should override\\n * this function so it returns a different value.\\n *\\n * We have followed general OpenZeppelin Contracts guidelines: functions revert\\n * instead returning `false` on failure. This behavior is nonetheless\\n * conventional and does not conflict with the expectations of ERC20\\n * applications.\\n *\\n * Additionally, an {Approval} event is emitted on calls to {transferFrom}.\\n * This allows applications to reconstruct the allowance for all accounts just\\n * by listening to said events. Other implementations of the EIP may not emit\\n * these events, as it isn't required by the specification.\\n */\\nabstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {\\n    mapping(address account => uint256) private _balances;\\n\\n    mapping(address account => mapping(address spender => uint256)) private _allowances;\\n\\n    uint256 private _totalSupply;\\n\\n    string private _name;\\n    string private _symbol;\\n\\n    /**\\n     * @dev Sets the values for {name} and {symbol}.\\n     *\\n     * All two of these values are immutable: they can only be set once during\\n     * construction.\\n     */\\n    constructor(string memory name_, string memory symbol_) {\\n        _name = name_;\\n        _symbol = symbol_;\\n    }\\n\\n    /**\\n     * @dev Returns the name of the token.\\n     */\\n    function name() public view virtual returns (string memory) {\\n        return _name;\\n    }\\n\\n    /**\\n     * @dev Returns the symbol of the token, usually a shorter version of the\\n     * name.\\n     */\\n    function symbol() public view virtual returns (string memory) {\\n        return _symbol;\\n    }\\n\\n    /**\\n     * @dev Returns the number of decimals used to get its user representation.\\n     * For example, if `decimals` equals `2`, a balance of `505` tokens should\\n     * be displayed to a user as `5.05` (`505 / 10 ** 2`).\\n     *\\n     * Tokens usually opt for a value of 18, imitating the relationship between\\n     * Ether and Wei. This is the default value returned by this function, unless\\n     * it's overridden.\\n     *\\n     * NOTE: This information is only used for _display_ purposes: it in\\n     * no way affects any of the arithmetic of the contract, including\\n     * {IERC20-balanceOf} and {IERC20-transfer}.\\n     */\\n    function decimals() public view virtual returns (uint8) {\\n        return 18;\\n    }\\n\\n    /**\\n     * @dev See {IERC20-totalSupply}.\\n     */\\n    function totalSupply() public view virtual returns (uint256) {\\n        return _totalSupply;\\n    }\\n\\n    /**\\n     * @dev See {IERC20-balanceOf}.\\n     */\\n    function balanceOf(address account) public view virtual returns (uint256) {\\n        return _balances[account];\\n    }\\n\\n    /**\\n     * @dev See {IERC20-transfer}.\\n     *\\n     * Requirements:\\n     *\\n     * - `to` cannot be the zero address.\\n     * - the caller must have a balance of at least `value`.\\n     */\\n    function transfer(address to, uint256 value) public virtual returns (bool) {\\n        address owner = _msgSender();\\n        _transfer(owner, to, value);\\n        return true;\\n    }\\n\\n    /**\\n     * @dev See {IERC20-allowance}.\\n     */\\n    function allowance(address owner, address spender) public view virtual returns (uint256) {\\n        return _allowances[owner][spender];\\n    }\\n\\n    /**\\n     * @dev See {IERC20-approve}.\\n     *\\n     * NOTE: If `value` is the maximum `uint256`, the allowance is not updated on\\n     * `transferFrom`. This is semantically equivalent to an infinite approval.\\n     *\\n     * Requirements:\\n     *\\n     * - `spender` cannot be the zero address.\\n     */\\n    function approve(address spender, uint256 value) public virtual returns (bool) {\\n        address owner = _msgSender();\\n        _approve(owner, spender, value);\\n        return true;\\n    }\\n\\n    /**\\n     * @dev See {IERC20-transferFrom}.\\n     *\\n     * Emits an {Approval} event indicating the updated allowance. This is not\\n     * required by the EIP. See the note at the beginning of {ERC20}.\\n     *\\n     * NOTE: Does not update the allowance if the current allowance\\n     * is the maximum `uint256`.\\n     *\\n     * Requirements:\\n     *\\n     * - `from` and `to` cannot be the zero address.\\n     * - `from` must have a balance of at least `value`.\\n     * - the caller must have allowance for ``from``'s tokens of at least\\n     * `value`.\\n     */\\n    function transferFrom(address from, address to, uint256 value) public virtual returns (bool) {\\n        address spender = _msgSender();\\n        _spendAllowance(from, spender, value);\\n        _transfer(from, to, value);\\n        return true;\\n    }\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from `from` to `to`.\\n     *\\n     * This internal function is equivalent to {transfer}, and can be used to\\n     * e.g. implement automatic token fees, slashing mechanisms, etc.\\n     *\\n     * Emits a {Transfer} event.\\n     *\\n     * NOTE: This function is not virtual, {_update} should be overridden instead.\\n     */\\n    function _transfer(address from, address to, uint256 value) internal {\\n        if (from == address(0)) {\\n            revert ERC20InvalidSender(address(0));\\n        }\\n        if (to == address(0)) {\\n            revert ERC20InvalidReceiver(address(0));\\n        }\\n        _update(from, to, value);\\n    }\\n\\n    /**\\n     * @dev Transfers a `value` amount of tokens from `from` to `to`, or alternatively mints (or burns) if `from`\\n     * (or `to`) is the zero address. All customizations to transfers, mints, and burns should be done by overriding\\n     * this function.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function _update(address from, address to, uint256 value) internal virtual {\\n        if (from == address(0)) {\\n            // Overflow check required: The rest of the code assumes that totalSupply never overflows\\n            _totalSupply += value;\\n        } else {\\n            uint256 fromBalance = _balances[from];\\n            if (fromBalance < value) {\\n                revert ERC20InsufficientBalance(from, fromBalance, value);\\n            }\\n            unchecked {\\n                // Overflow not possible: value <= fromBalance <= totalSupply.\\n                _balances[from] = fromBalance - value;\\n            }\\n        }\\n\\n        if (to == address(0)) {\\n            unchecked {\\n                // Overflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.\\n                _totalSupply -= value;\\n            }\\n        } else {\\n            unchecked {\\n                // Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.\\n                _balances[to] += value;\\n            }\\n        }\\n\\n        emit Transfer(from, to, value);\\n    }\\n\\n    /**\\n     * @dev Creates a `value` amount of tokens and assigns them to `account`, by transferring it from address(0).\\n     * Relies on the `_update` mechanism\\n     *\\n     * Emits a {Transfer} event with `from` set to the zero address.\\n     *\\n     * NOTE: This function is not virtual, {_update} should be overridden instead.\\n     */\\n    function _mint(address account, uint256 value) internal {\\n        if (account == address(0)) {\\n            revert ERC20InvalidReceiver(address(0));\\n        }\\n        _update(address(0), account, value);\\n    }\\n\\n    /**\\n     * @dev Destroys a `value` amount of tokens from `account`, lowering the total supply.\\n     * Relies on the `_update` mechanism.\\n     *\\n     * Emits a {Transfer} event with `to` set to the zero address.\\n     *\\n     * NOTE: This function is not virtual, {_update} should be overridden instead\\n     */\\n    function _burn(address account, uint256 value) internal {\\n        if (account == address(0)) {\\n            revert ERC20InvalidSender(address(0));\\n        }\\n        _update(account, address(0), value);\\n    }\\n\\n    /**\\n     * @dev Sets `value` as the allowance of `spender` over the `owner` s tokens.\\n     *\\n     * This internal function is equivalent to `approve`, and can be used to\\n     * e.g. set automatic allowances for certain subsystems, etc.\\n     *\\n     * Emits an {Approval} event.\\n     *\\n     * Requirements:\\n     *\\n     * - `owner` cannot be the zero address.\\n     * - `spender` cannot be the zero address.\\n     *\\n     * Overrides to this logic should be done to the variant with an additional `bool emitEvent` argument.\\n     */\\n    function _approve(address owner, address spender, uint256 value) internal {\\n        _approve(owner, spender, value, true);\\n    }\\n\\n    /**\\n     * @dev Variant of {_approve} with an optional flag to enable or disable the {Approval} event.\\n     *\\n     * By default (when calling {_approve}) the flag is set to true. On the other hand, approval changes made by\\n     * `_spendAllowance` during the `transferFrom` operation set the flag to false. This saves gas by not emitting any\\n     * `Approval` event during `transferFrom` operations.\\n     *\\n     * Anyone who wishes to continue emitting `Approval` events on the`transferFrom` operation can force the flag to\\n     * true using the following override:\\n     * ```\\n     * function _approve(address owner, address spender, uint256 value, bool) internal virtual override {\\n     *     super._approve(owner, spender, value, true);\\n     * }\\n     * ```\\n     *\\n     * Requirements are the same as {_approve}.\\n     */\\n    function _approve(address owner, address spender, uint256 value, bool emitEvent) internal virtual {\\n        if (owner == address(0)) {\\n            revert ERC20InvalidApprover(address(0));\\n        }\\n        if (spender == address(0)) {\\n            revert ERC20InvalidSpender(address(0));\\n        }\\n        _allowances[owner][spender] = value;\\n        if (emitEvent) {\\n            emit Approval(owner, spender, value);\\n        }\\n    }\\n\\n    /**\\n     * @dev Updates `owner` s allowance for `spender` based on spent `value`.\\n     *\\n     * Does not update the allowance value in case of infinite allowance.\\n     * Revert if not enough allowance is available.\\n     *\\n     * Does not emit an {Approval} event.\\n     */\\n    function _spendAllowance(address owner, address spender, uint256 value) internal virtual {\\n        uint256 currentAllowance = allowance(owner, spender);\\n        if (currentAllowance != type(uint256).max) {\\n            if (currentAllowance < value) {\\n                revert ERC20InsufficientAllowance(spender, currentAllowance, value);\\n            }\\n            unchecked {\\n                _approve(owner, spender, currentAllowance - value, false);\\n            }\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0xc3e1fa9d1987f8d349dfb4d6fe93bf2ca014b52ba335cfac30bfe71e357e6f80\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/IERC20.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Interface of the ERC20 standard as defined in the EIP.\\n */\\ninterface IERC20 {\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n\\n    /**\\n     * @dev Returns the value of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the value of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from the caller's account to `to`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address to, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets a `value` amount of tokens as the allowance of `spender` over the\\n     * caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from `from` to `to` using the\\n     * allowance mechanism. `value` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(address from, address to, uint256 value) external returns (bool);\\n}\\n\",\"keccak256\":\"0xc6a8ff0ea489379b61faa647490411b80102578440ab9d84e9a957cc12164e70\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/extensions/IERC20Metadata.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {IERC20} from \\\"../IERC20.sol\\\";\\n\\n/**\\n * @dev Interface for the optional metadata functions from the ERC20 standard.\\n */\\ninterface IERC20Metadata is IERC20 {\\n    /**\\n     * @dev Returns the name of the token.\\n     */\\n    function name() external view returns (string memory);\\n\\n    /**\\n     * @dev Returns the symbol of the token.\\n     */\\n    function symbol() external view returns (string memory);\\n\\n    /**\\n     * @dev Returns the decimals places of the token.\\n     */\\n    function decimals() external view returns (uint8);\\n}\\n\",\"keccak256\":\"0xaa761817f6cd7892fcf158b3c776b34551cde36f48ff9703d53898bc45a94ea2\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.1) (utils/Context.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n\\n    function _contextSuffixLength() internal view virtual returns (uint256) {\\n        return 0;\\n    }\\n}\\n\",\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"license\":\"MIT\"},\"contracts/BuidlGuidlBread.sol\":{\"content\":\"//SPDX-License-Identifier: MIT\\npragma solidity >=0.8.0 <0.9.0;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/ERC20.sol\\\";\\nimport \\\"@openzeppelin/contracts/access/Ownable.sol\\\";\\n\\ncontract BuidlGuidlBread is ERC20, Ownable {\\n    event Mint(address indexed user, uint256 amount);\\n    event PenaltyBurn(address indexed target, uint256 amount);\\n    event MintLimitUpdated(uint256 newLimit);\\n    event CooldownUpdated(uint256 newCooldown);\\n\\n    address public rpcBreadMinterAddress;\\n    uint256 public mintLimit = 168 * 10**18; // 168 Bread with 18 decimals\\n    uint256 public mintCooldown = 24 hours;\\n\\n    mapping(address => uint256) public lastMintTime;\\n    mapping(address => uint256) public mintedInPeriod;\\n\\n    /// @param rpcBreadMinterAddress_ The address authorized to perform batch mint/burn operations\\n    /// @dev Mints 100,000 tokens to the contract deployer and sets the initial minter address\\n    constructor(address rpcBreadMinterAddress_) ERC20(\\\"BuidlGuidl Bread\\\", \\\"BGBRD\\\") Ownable(msg.sender) {\\n        rpcBreadMinterAddress = rpcBreadMinterAddress_;\\n        _mint(msg.sender, 100000 * 10 ** 18);\\n    }\\n\\n    /// @notice Updates the RPC Bread Minter address\\n    /// @param newAddress The new address that will be authorized to perform batch operations\\n    /// @dev Only the contract owner can call this function\\n    function setRpcBreadMinterAddress(address newAddress) public onlyOwner {\\n        rpcBreadMinterAddress = newAddress;\\n    }\\n\\n    /// @notice Sets the maximum amount that can be minted per cooldown period\\n    /// @param newLimit The new mint limit in wei (with 18 decimals)\\n    /// @dev Only the contract owner can call this function. Limit must be greater than 0\\n    function setMintLimit(uint256 newLimit) public onlyOwner {\\n        require(newLimit > 0, \\\"Mint limit must be greater than 0\\\");\\n        mintLimit = newLimit;\\n        emit MintLimitUpdated(newLimit);\\n    }\\n\\n    /// @notice Sets the cooldown period between mint limit resets\\n    /// @param newCooldown The new cooldown period in seconds\\n    /// @dev Only the contract owner can call this function. Cooldown must be greater than 0\\n    function setMintCooldown(uint256 newCooldown) public onlyOwner {\\n        require(newCooldown > 0, \\\"Cooldown must be greater than 0\\\");\\n        mintCooldown = newCooldown;\\n        emit CooldownUpdated(newCooldown);\\n    }\\n\\n    modifier onlyRpcBreadMinter() {\\n        require(msg.sender == rpcBreadMinterAddress, \\\"Only RPC Bread Minter can call this function\\\");\\n        _;\\n    }\\n\\n    /// @dev Internal function to check and enforce rate limiting for token minting\\n    /// @param to The address receiving the tokens\\n    /// @param amount The amount of tokens being minted\\n    /// @notice Resets the minted amount if cooldown period has passed, otherwise checks limits\\n    function _checkRateLimit(address to, uint256 amount) internal {\\n        uint256 currentTime = block.timestamp;\\n        \\n        // If it's been more than cooldown period since last mint, reset the period\\n        if (currentTime >= lastMintTime[to] + mintCooldown) {\\n            mintedInPeriod[to] = 0;\\n        }\\n        \\n        // Check if the new amount would exceed the limit\\n        require(mintedInPeriod[to] + amount <= mintLimit, \\\"Mint amount exceeds limit\\\");\\n        \\n        // Update the tracking\\n        lastMintTime[to] = currentTime;\\n        mintedInPeriod[to] += amount;\\n    }\\n\\n    /// @notice Returns the remaining cooldown time for a user before they can mint again\\n    /// @param user The address to check cooldown for\\n    /// @return The number of seconds remaining in the cooldown period (0 if cooldown has passed)\\n    function getRemainingCooldown(address user) public view returns (uint256) {\\n        uint256 currentTime = block.timestamp;\\n        uint256 timeSinceLastMint = currentTime - lastMintTime[user];\\n        \\n        if (timeSinceLastMint >= mintCooldown) {\\n            return 0;\\n        }\\n        \\n        return mintCooldown - timeSinceLastMint;\\n    }\\n\\n    /// @notice Returns the amount of tokens minted by a user in the current period\\n    /// @param user The address to check minted amount for\\n    /// @return The amount of tokens minted in the current cooldown period (0 if period has reset)\\n    function getMintedInPeriod(address user) public view returns (uint256) {\\n        uint256 currentTime = block.timestamp;\\n        if (currentTime >= lastMintTime[user] + mintCooldown) {\\n            return 0;\\n        }\\n        return mintedInPeriod[user];\\n    }\\n\\n    /// @notice Returns the remaining amount that can be minted by a user in the current period\\n    /// @param user The address to check remaining mint amount for\\n    /// @return The amount of tokens that can still be minted (full limit if period has reset)\\n    function getRemainingMintAmount(address user) public view returns (uint256) {\\n        uint256 currentTime = block.timestamp;\\n        if (currentTime >= lastMintTime[user] + mintCooldown) {\\n            return mintLimit;\\n        }\\n        \\n        if (mintedInPeriod[user] >= mintLimit) {\\n            return 0;\\n        }\\n        \\n        return mintLimit - mintedInPeriod[user];\\n    }\\n\\n    /// @notice Mints tokens to multiple addresses in a single transaction\\n    /// @param addresses Array of recipient addresses\\n    /// @param amounts Array of amounts to mint (must match addresses array length)\\n    /// @dev Only the authorized RPC Bread Minter can call this function\\n    /// @dev Enforces rate limiting for each recipient and validates all inputs\\n    /// @dev Maximum batch size is 100 to prevent gas issues\\n    function batchMint(address[] calldata addresses, uint256[] calldata amounts) public onlyRpcBreadMinter {\\n        require(addresses.length == amounts.length, \\\"Address and amount arrays must be the same length\\\");\\n        require(addresses.length > 0, \\\"Arrays cannot be empty\\\");\\n        require(addresses.length <= 100, \\\"Maximum batch size is 100\\\"); // Prevent gas issues with large arrays\\n\\n        for (uint256 i = 0; i < addresses.length; i++) {\\n            require(addresses[i] != address(0), \\\"Cannot mint to zero address\\\");\\n            require(amounts[i] > 0, \\\"Amount must be greater than 0\\\");\\n            _checkRateLimit(addresses[i], amounts[i]);\\n            _mint(addresses[i], amounts[i]);\\n            emit Mint(addresses[i], amounts[i]);\\n        }\\n    }\\n\\n    /// @notice Burns tokens from multiple addresses in a single transaction\\n    /// @param addresses Array of addresses to burn tokens from\\n    /// @param amounts Array of amounts to burn (must match addresses array length)\\n    /// @dev Only the authorized RPC Bread Minter can call this function\\n    /// @dev Used for penalty burns or other administrative token removal\\n    /// @dev Maximum batch size is 100 to prevent gas issues\\n    function batchBurn(address[] calldata addresses, uint256[] calldata amounts) public onlyRpcBreadMinter {\\n        require(addresses.length == amounts.length, \\\"Address and amount arrays must be the same length\\\");\\n        require(addresses.length > 0, \\\"Arrays cannot be empty\\\");\\n        require(addresses.length <= 100, \\\"Maximum batch size is 100\\\"); // Prevent gas issues with large arrays\\n\\n        for (uint256 i = 0; i < addresses.length; i++) {\\n            require(addresses[i] != address(0), \\\"Cannot burn from zero address\\\");\\n            require(amounts[i] > 0, \\\"Amount must be greater than 0\\\");\\n            _burn(addresses[i], amounts[i]);\\n            emit PenaltyBurn(addresses[i], amounts[i]);\\n        }\\n    }\\n} \",\"keccak256\":\"0x216eb5a24fb1df9c22f3ecbf8a22270ecf8b0463b65c9957a9ce7fcd4ecce1b6\",\"license\":\"MIT\"}},\"version\":1}",
-  "bytecode": "0x608060405268091b77e5e5d9a00000600755620151806008553480156200002557600080fd5b5060405162001a2038038062001a208339810160408190526200004891620002ea565b336040518060400160405280601081526020016f109d5a591b11dd5a591b08109c99585960821b815250604051806040016040528060058152602001641091d0949160da1b8152508160039081620000a19190620003c1565b506004620000b08282620003c1565b5050506001600160a01b038116620000e357604051631e4fbdf760e01b8152600060048201526024015b60405180910390fd5b620000ee8162000127565b50600680546001600160a01b0319166001600160a01b038316179055620001203369152d02c7e14af680000062000179565b50620004b5565b600580546001600160a01b038381166001600160a01b0319831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b6001600160a01b038216620001a55760405163ec442f0560e01b815260006004820152602401620000da565b620001b360008383620001b7565b5050565b6001600160a01b038316620001e6578060026000828254620001da91906200048d565b909155506200025a9050565b6001600160a01b038316600090815260208190526040902054818110156200023b5760405163391434e360e21b81526001600160a01b03851660048201526024810182905260448101839052606401620000da565b6001600160a01b03841660009081526020819052604090209082900390555b6001600160a01b038216620002785760028054829003905562000297565b6001600160a01b03821660009081526020819052604090208054820190555b816001600160a01b0316836001600160a01b03167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef83604051620002dd91815260200190565b60405180910390a3505050565b600060208284031215620002fd57600080fd5b81516001600160a01b03811681146200031557600080fd5b9392505050565b634e487b7160e01b600052604160045260246000fd5b600181811c908216806200034757607f821691505b6020821081036200036857634e487b7160e01b600052602260045260246000fd5b50919050565b601f821115620003bc57600081815260208120601f850160051c81016020861015620003975750805b601f850160051c820191505b81811015620003b857828155600101620003a3565b5050505b505050565b81516001600160401b03811115620003dd57620003dd6200031c565b620003f581620003ee845462000332565b846200036e565b602080601f8311600181146200042d5760008415620004145750858301515b600019600386901b1c1916600185901b178555620003b8565b600085815260208120601f198616915b828110156200045e578886015182559484019460019091019084016200043d565b50858210156200047d5787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b80820180821115620004af57634e487b7160e01b600052601160045260246000fd5b92915050565b61155b80620004c56000396000f3fe608060405234801561001057600080fd5b50600436106101735760003560e01c8063715018a6116100de578063a2c9225711610097578063dd62ed3e11610071578063dd62ed3e14610337578063e6f3e00414610370578063f2fde38b14610383578063fc71a1cc1461039657600080fd5b8063a2c92257146102fe578063a84bea9714610311578063a9059cbb1461032457600080fd5b8063715018a61461028d5780638da5cb5b146102955780638f1550f5146102ba57806395d89b41146102da578063996517cf146102e25780639e6a1d7d146102eb57600080fd5b8063344a681e11610130578063344a681e146101f65780634a6cc6771461020b5780634b957eb41461021e57806368573107146102315780636aa71d181461024457806370a082311461026457600080fd5b806306fdde0314610178578063095ea7b31461019657806318160ddd146101b95780632000d430146101cb57806323b872dd146101d4578063313ce567146101e7575b600080fd5b6101806103a9565b60405161018d91906111f4565b60405180910390f35b6101a96101a436600461125e565b61043b565b604051901515815260200161018d565b6002545b60405190815260200161018d565b6101bd60085481565b6101a96101e2366004611288565b610455565b6040516012815260200161018d565b6102096102043660046112c4565b610479565b005b610209610219366004611329565b610512565b6101bd61022c366004611395565b6107c2565b61020961023f366004611329565b610818565b6101bd610252366004611395565b60096020526000908152604090205481565b6101bd610272366004611395565b6001600160a01b031660009081526020819052604090205490565b610209610b09565b6005546001600160a01b03165b6040516001600160a01b03909116815260200161018d565b6101bd6102c8366004611395565b600a6020526000908152604090205481565b610180610b1d565b6101bd60075481565b6102096102f93660046112c4565b610b2c565b61020961030c366004611395565b610bc3565b6006546102a2906001600160a01b031681565b6101a961033236600461125e565b610bed565b6101bd6103453660046113b0565b6001600160a01b03918216600090815260016020908152604080832093909416825291909152205490565b6101bd61037e366004611395565b610bfb565b610209610391366004611395565b610c4d565b6101bd6103a4366004611395565b610c8b565b6060600380546103b8906113e3565b80601f01602080910402602001604051908101604052809291908181526020018280546103e4906113e3565b80156104315780601f1061040657610100808354040283529160200191610431565b820191906000526020600020905b81548152906001019060200180831161041457829003601f168201915b5050505050905090565b600033610449818585610d1c565b60019150505b92915050565b600033610463858285610d2e565b61046e858585610dac565b506001949350505050565b610481610e0b565b600081116104d65760405162461bcd60e51b815260206004820152601f60248201527f436f6f6c646f776e206d7573742062652067726561746572207468616e20300060448201526064015b60405180910390fd5b60088190556040518181527f583d8b24c5439ab7d810e51e37e8db41ba66f1168fd7b752ceae0c7681c5272c906020015b60405180910390a150565b6006546001600160a01b0316331461053c5760405162461bcd60e51b81526004016104cd9061141d565b82811461055b5760405162461bcd60e51b81526004016104cd90611469565b826105a15760405162461bcd60e51b81526020600482015260166024820152754172726179732063616e6e6f7420626520656d70747960501b60448201526064016104cd565b60648311156105ee5760405162461bcd60e51b815260206004820152601960248201527804d6178696d756d2062617463682073697a652069732031303603c1b60448201526064016104cd565b60005b838110156107bb57600085858381811061060d5761060d6114ba565b90506020020160208101906106229190611395565b6001600160a01b0316036106785760405162461bcd60e51b815260206004820152601d60248201527f43616e6e6f74206275726e2066726f6d207a65726f206164647265737300000060448201526064016104cd565b600083838381811061068c5761068c6114ba565b90506020020135116106e05760405162461bcd60e51b815260206004820152601d60248201527f416d6f756e74206d7573742062652067726561746572207468616e203000000060448201526064016104cd565b6107288585838181106106f5576106f56114ba565b905060200201602081019061070a9190611395565b84848481811061071c5761071c6114ba565b90506020020135610e38565b84848281811061073a5761073a6114ba565b905060200201602081019061074f9190611395565b6001600160a01b03167f4847840e886fff2fb51795fc333e74b8f187068bbd114005b146684e5d91025984848481811061078b5761078b6114ba565b905060200201356040516107a191815260200190565b60405180910390a2806107b3816114e6565b9150506105f1565b5050505050565b6008546001600160a01b038216600090815260096020526040812054909142916107ec91906114ff565b81106107fb5750600092915050565b50506001600160a01b03166000908152600a602052604090205490565b6006546001600160a01b031633146108425760405162461bcd60e51b81526004016104cd9061141d565b8281146108615760405162461bcd60e51b81526004016104cd90611469565b826108a75760405162461bcd60e51b81526020600482015260166024820152754172726179732063616e6e6f7420626520656d70747960501b60448201526064016104cd565b60648311156108f45760405162461bcd60e51b815260206004820152601960248201527804d6178696d756d2062617463682073697a652069732031303603c1b60448201526064016104cd565b60005b838110156107bb576000858583818110610913576109136114ba565b90506020020160208101906109289190611395565b6001600160a01b03160361097e5760405162461bcd60e51b815260206004820152601b60248201527f43616e6e6f74206d696e7420746f207a65726f2061646472657373000000000060448201526064016104cd565b6000838383818110610992576109926114ba565b90506020020135116109e65760405162461bcd60e51b815260206004820152601d60248201527f416d6f756e74206d7573742062652067726561746572207468616e203000000060448201526064016104cd565b610a2e8585838181106109fb576109fb6114ba565b9050602002016020810190610a109190611395565b848484818110610a2257610a226114ba565b90506020020135610e72565b610a76858583818110610a4357610a436114ba565b9050602002016020810190610a589190611395565b848484818110610a6a57610a6a6114ba565b90506020020135610f6d565b848482818110610a8857610a886114ba565b9050602002016020810190610a9d9190611395565b6001600160a01b03167f0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885848484818110610ad957610ad96114ba565b90506020020135604051610aef91815260200190565b60405180910390a280610b01816114e6565b9150506108f7565b610b11610e0b565b610b1b6000610fa3565b565b6060600480546103b8906113e3565b610b34610e0b565b60008111610b8e5760405162461bcd60e51b815260206004820152602160248201527f4d696e74206c696d6974206d7573742062652067726561746572207468616e206044820152600360fc1b60648201526084016104cd565b60078190556040518181527fc39a10b7490bc694c922bd6cbef1462b0cbf533e0e4bce081f71702069d12d1c90602001610507565b610bcb610e0b565b600680546001600160a01b0319166001600160a01b0392909216919091179055565b600033610449818585610dac565b6001600160a01b03811660009081526009602052604081205442908290610c229083611512565b90506008548110610c37575060009392505050565b80600854610c459190611512565b949350505050565b610c55610e0b565b6001600160a01b038116610c7f57604051631e4fbdf760e01b8152600060048201526024016104cd565b610c8881610fa3565b50565b6008546001600160a01b03821660009081526009602052604081205490914291610cb591906114ff565b8110610cc5575050600754919050565b6007546001600160a01b0384166000908152600a602052604090205410610cef5750600092915050565b6001600160a01b0383166000908152600a6020526040902054600754610d159190611512565b9392505050565b610d298383836001610ff5565b505050565b6001600160a01b038381166000908152600160209081526040808320938616835292905220546000198114610da65781811015610d9757604051637dc7a0d960e11b81526001600160a01b038416600482015260248101829052604481018390526064016104cd565b610da684848484036000610ff5565b50505050565b6001600160a01b038316610dd657604051634b637e8f60e11b8152600060048201526024016104cd565b6001600160a01b038216610e005760405163ec442f0560e01b8152600060048201526024016104cd565b610d298383836110ca565b6005546001600160a01b03163314610b1b5760405163118cdaa760e01b81523360048201526024016104cd565b6001600160a01b038216610e6257604051634b637e8f60e11b8152600060048201526024016104cd565b610e6e826000836110ca565b5050565b6008546001600160a01b0383166000908152600960205260409020544291610e99916114ff565b8110610eb9576001600160a01b0383166000908152600a60205260408120555b6007546001600160a01b0384166000908152600a6020526040902054610ee09084906114ff565b1115610f2e5760405162461bcd60e51b815260206004820152601960248201527f4d696e7420616d6f756e742065786365656473206c696d69740000000000000060448201526064016104cd565b6001600160a01b0383166000908152600960209081526040808320849055600a90915281208054849290610f639084906114ff565b9091555050505050565b6001600160a01b038216610f975760405163ec442f0560e01b8152600060048201526024016104cd565b610e6e600083836110ca565b600580546001600160a01b038381166001600160a01b0319831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b6001600160a01b03841661101f5760405163e602df0560e01b8152600060048201526024016104cd565b6001600160a01b03831661104957604051634a1406b160e11b8152600060048201526024016104cd565b6001600160a01b0380851660009081526001602090815260408083209387168352929052208290558015610da657826001600160a01b0316846001600160a01b03167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925846040516110bc91815260200190565b60405180910390a350505050565b6001600160a01b0383166110f55780600260008282546110ea91906114ff565b909155506111679050565b6001600160a01b038316600090815260208190526040902054818110156111485760405163391434e360e21b81526001600160a01b038516600482015260248101829052604481018390526064016104cd565b6001600160a01b03841660009081526020819052604090209082900390555b6001600160a01b038216611183576002805482900390556111a2565b6001600160a01b03821660009081526020819052604090208054820190555b816001600160a01b0316836001600160a01b03167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef836040516111e791815260200190565b60405180910390a3505050565b600060208083528351808285015260005b8181101561122157858101830151858201604001528201611205565b506000604082860101526040601f19601f8301168501019250505092915050565b80356001600160a01b038116811461125957600080fd5b919050565b6000806040838503121561127157600080fd5b61127a83611242565b946020939093013593505050565b60008060006060848603121561129d57600080fd5b6112a684611242565b92506112b460208501611242565b9150604084013590509250925092565b6000602082840312156112d657600080fd5b5035919050565b60008083601f8401126112ef57600080fd5b50813567ffffffffffffffff81111561130757600080fd5b6020830191508360208260051b850101111561132257600080fd5b9250929050565b6000806000806040858703121561133f57600080fd5b843567ffffffffffffffff8082111561135757600080fd5b611363888389016112dd565b9096509450602087013591508082111561137c57600080fd5b50611389878288016112dd565b95989497509550505050565b6000602082840312156113a757600080fd5b610d1582611242565b600080604083850312156113c357600080fd5b6113cc83611242565b91506113da60208401611242565b90509250929050565b600181811c908216806113f757607f821691505b60208210810361141757634e487b7160e01b600052602260045260246000fd5b50919050565b6020808252602c908201527f4f6e6c7920525043204272656164204d696e7465722063616e2063616c6c207460408201526b3434b990333ab731ba34b7b760a11b606082015260800190565b60208082526031908201527f4164647265737320616e6420616d6f756e7420617272617973206d75737420626040820152700ca40e8d0ca40e6c2daca40d8cadccee8d607b1b606082015260800190565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b6000600182016114f8576114f86114d0565b5060010190565b8082018082111561044f5761044f6114d0565b8181038181111561044f5761044f6114d056fea2646970667358221220146b4c3de108c69b1f2fc7f7ee2069f309659c0e6b08a4e7030cab7d6dee23e264736f6c63430008140033",
-  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106101735760003560e01c8063715018a6116100de578063a2c9225711610097578063dd62ed3e11610071578063dd62ed3e14610337578063e6f3e00414610370578063f2fde38b14610383578063fc71a1cc1461039657600080fd5b8063a2c92257146102fe578063a84bea9714610311578063a9059cbb1461032457600080fd5b8063715018a61461028d5780638da5cb5b146102955780638f1550f5146102ba57806395d89b41146102da578063996517cf146102e25780639e6a1d7d146102eb57600080fd5b8063344a681e11610130578063344a681e146101f65780634a6cc6771461020b5780634b957eb41461021e57806368573107146102315780636aa71d181461024457806370a082311461026457600080fd5b806306fdde0314610178578063095ea7b31461019657806318160ddd146101b95780632000d430146101cb57806323b872dd146101d4578063313ce567146101e7575b600080fd5b6101806103a9565b60405161018d91906111f4565b60405180910390f35b6101a96101a436600461125e565b61043b565b604051901515815260200161018d565b6002545b60405190815260200161018d565b6101bd60085481565b6101a96101e2366004611288565b610455565b6040516012815260200161018d565b6102096102043660046112c4565b610479565b005b610209610219366004611329565b610512565b6101bd61022c366004611395565b6107c2565b61020961023f366004611329565b610818565b6101bd610252366004611395565b60096020526000908152604090205481565b6101bd610272366004611395565b6001600160a01b031660009081526020819052604090205490565b610209610b09565b6005546001600160a01b03165b6040516001600160a01b03909116815260200161018d565b6101bd6102c8366004611395565b600a6020526000908152604090205481565b610180610b1d565b6101bd60075481565b6102096102f93660046112c4565b610b2c565b61020961030c366004611395565b610bc3565b6006546102a2906001600160a01b031681565b6101a961033236600461125e565b610bed565b6101bd6103453660046113b0565b6001600160a01b03918216600090815260016020908152604080832093909416825291909152205490565b6101bd61037e366004611395565b610bfb565b610209610391366004611395565b610c4d565b6101bd6103a4366004611395565b610c8b565b6060600380546103b8906113e3565b80601f01602080910402602001604051908101604052809291908181526020018280546103e4906113e3565b80156104315780601f1061040657610100808354040283529160200191610431565b820191906000526020600020905b81548152906001019060200180831161041457829003601f168201915b5050505050905090565b600033610449818585610d1c565b60019150505b92915050565b600033610463858285610d2e565b61046e858585610dac565b506001949350505050565b610481610e0b565b600081116104d65760405162461bcd60e51b815260206004820152601f60248201527f436f6f6c646f776e206d7573742062652067726561746572207468616e20300060448201526064015b60405180910390fd5b60088190556040518181527f583d8b24c5439ab7d810e51e37e8db41ba66f1168fd7b752ceae0c7681c5272c906020015b60405180910390a150565b6006546001600160a01b0316331461053c5760405162461bcd60e51b81526004016104cd9061141d565b82811461055b5760405162461bcd60e51b81526004016104cd90611469565b826105a15760405162461bcd60e51b81526020600482015260166024820152754172726179732063616e6e6f7420626520656d70747960501b60448201526064016104cd565b60648311156105ee5760405162461bcd60e51b815260206004820152601960248201527804d6178696d756d2062617463682073697a652069732031303603c1b60448201526064016104cd565b60005b838110156107bb57600085858381811061060d5761060d6114ba565b90506020020160208101906106229190611395565b6001600160a01b0316036106785760405162461bcd60e51b815260206004820152601d60248201527f43616e6e6f74206275726e2066726f6d207a65726f206164647265737300000060448201526064016104cd565b600083838381811061068c5761068c6114ba565b90506020020135116106e05760405162461bcd60e51b815260206004820152601d60248201527f416d6f756e74206d7573742062652067726561746572207468616e203000000060448201526064016104cd565b6107288585838181106106f5576106f56114ba565b905060200201602081019061070a9190611395565b84848481811061071c5761071c6114ba565b90506020020135610e38565b84848281811061073a5761073a6114ba565b905060200201602081019061074f9190611395565b6001600160a01b03167f4847840e886fff2fb51795fc333e74b8f187068bbd114005b146684e5d91025984848481811061078b5761078b6114ba565b905060200201356040516107a191815260200190565b60405180910390a2806107b3816114e6565b9150506105f1565b5050505050565b6008546001600160a01b038216600090815260096020526040812054909142916107ec91906114ff565b81106107fb5750600092915050565b50506001600160a01b03166000908152600a602052604090205490565b6006546001600160a01b031633146108425760405162461bcd60e51b81526004016104cd9061141d565b8281146108615760405162461bcd60e51b81526004016104cd90611469565b826108a75760405162461bcd60e51b81526020600482015260166024820152754172726179732063616e6e6f7420626520656d70747960501b60448201526064016104cd565b60648311156108f45760405162461bcd60e51b815260206004820152601960248201527804d6178696d756d2062617463682073697a652069732031303603c1b60448201526064016104cd565b60005b838110156107bb576000858583818110610913576109136114ba565b90506020020160208101906109289190611395565b6001600160a01b03160361097e5760405162461bcd60e51b815260206004820152601b60248201527f43616e6e6f74206d696e7420746f207a65726f2061646472657373000000000060448201526064016104cd565b6000838383818110610992576109926114ba565b90506020020135116109e65760405162461bcd60e51b815260206004820152601d60248201527f416d6f756e74206d7573742062652067726561746572207468616e203000000060448201526064016104cd565b610a2e8585838181106109fb576109fb6114ba565b9050602002016020810190610a109190611395565b848484818110610a2257610a226114ba565b90506020020135610e72565b610a76858583818110610a4357610a436114ba565b9050602002016020810190610a589190611395565b848484818110610a6a57610a6a6114ba565b90506020020135610f6d565b848482818110610a8857610a886114ba565b9050602002016020810190610a9d9190611395565b6001600160a01b03167f0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885848484818110610ad957610ad96114ba565b90506020020135604051610aef91815260200190565b60405180910390a280610b01816114e6565b9150506108f7565b610b11610e0b565b610b1b6000610fa3565b565b6060600480546103b8906113e3565b610b34610e0b565b60008111610b8e5760405162461bcd60e51b815260206004820152602160248201527f4d696e74206c696d6974206d7573742062652067726561746572207468616e206044820152600360fc1b60648201526084016104cd565b60078190556040518181527fc39a10b7490bc694c922bd6cbef1462b0cbf533e0e4bce081f71702069d12d1c90602001610507565b610bcb610e0b565b600680546001600160a01b0319166001600160a01b0392909216919091179055565b600033610449818585610dac565b6001600160a01b03811660009081526009602052604081205442908290610c229083611512565b90506008548110610c37575060009392505050565b80600854610c459190611512565b949350505050565b610c55610e0b565b6001600160a01b038116610c7f57604051631e4fbdf760e01b8152600060048201526024016104cd565b610c8881610fa3565b50565b6008546001600160a01b03821660009081526009602052604081205490914291610cb591906114ff565b8110610cc5575050600754919050565b6007546001600160a01b0384166000908152600a602052604090205410610cef5750600092915050565b6001600160a01b0383166000908152600a6020526040902054600754610d159190611512565b9392505050565b610d298383836001610ff5565b505050565b6001600160a01b038381166000908152600160209081526040808320938616835292905220546000198114610da65781811015610d9757604051637dc7a0d960e11b81526001600160a01b038416600482015260248101829052604481018390526064016104cd565b610da684848484036000610ff5565b50505050565b6001600160a01b038316610dd657604051634b637e8f60e11b8152600060048201526024016104cd565b6001600160a01b038216610e005760405163ec442f0560e01b8152600060048201526024016104cd565b610d298383836110ca565b6005546001600160a01b03163314610b1b5760405163118cdaa760e01b81523360048201526024016104cd565b6001600160a01b038216610e6257604051634b637e8f60e11b8152600060048201526024016104cd565b610e6e826000836110ca565b5050565b6008546001600160a01b0383166000908152600960205260409020544291610e99916114ff565b8110610eb9576001600160a01b0383166000908152600a60205260408120555b6007546001600160a01b0384166000908152600a6020526040902054610ee09084906114ff565b1115610f2e5760405162461bcd60e51b815260206004820152601960248201527f4d696e7420616d6f756e742065786365656473206c696d69740000000000000060448201526064016104cd565b6001600160a01b0383166000908152600960209081526040808320849055600a90915281208054849290610f639084906114ff565b9091555050505050565b6001600160a01b038216610f975760405163ec442f0560e01b8152600060048201526024016104cd565b610e6e600083836110ca565b600580546001600160a01b038381166001600160a01b0319831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b6001600160a01b03841661101f5760405163e602df0560e01b8152600060048201526024016104cd565b6001600160a01b03831661104957604051634a1406b160e11b8152600060048201526024016104cd565b6001600160a01b0380851660009081526001602090815260408083209387168352929052208290558015610da657826001600160a01b0316846001600160a01b03167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925846040516110bc91815260200190565b60405180910390a350505050565b6001600160a01b0383166110f55780600260008282546110ea91906114ff565b909155506111679050565b6001600160a01b038316600090815260208190526040902054818110156111485760405163391434e360e21b81526001600160a01b038516600482015260248101829052604481018390526064016104cd565b6001600160a01b03841660009081526020819052604090209082900390555b6001600160a01b038216611183576002805482900390556111a2565b6001600160a01b03821660009081526020819052604090208054820190555b816001600160a01b0316836001600160a01b03167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef836040516111e791815260200190565b60405180910390a3505050565b600060208083528351808285015260005b8181101561122157858101830151858201604001528201611205565b506000604082860101526040601f19601f8301168501019250505092915050565b80356001600160a01b038116811461125957600080fd5b919050565b6000806040838503121561127157600080fd5b61127a83611242565b946020939093013593505050565b60008060006060848603121561129d57600080fd5b6112a684611242565b92506112b460208501611242565b9150604084013590509250925092565b6000602082840312156112d657600080fd5b5035919050565b60008083601f8401126112ef57600080fd5b50813567ffffffffffffffff81111561130757600080fd5b6020830191508360208260051b850101111561132257600080fd5b9250929050565b6000806000806040858703121561133f57600080fd5b843567ffffffffffffffff8082111561135757600080fd5b611363888389016112dd565b9096509450602087013591508082111561137c57600080fd5b50611389878288016112dd565b95989497509550505050565b6000602082840312156113a757600080fd5b610d1582611242565b600080604083850312156113c357600080fd5b6113cc83611242565b91506113da60208401611242565b90509250929050565b600181811c908216806113f757607f821691505b60208210810361141757634e487b7160e01b600052602260045260246000fd5b50919050565b6020808252602c908201527f4f6e6c7920525043204272656164204d696e7465722063616e2063616c6c207460408201526b3434b990333ab731ba34b7b760a11b606082015260800190565b60208082526031908201527f4164647265737320616e6420616d6f756e7420617272617973206d75737420626040820152700ca40e8d0ca40e6c2daca40d8cadccee8d607b1b606082015260800190565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b6000600182016114f8576114f86114d0565b5060010190565b8082018082111561044f5761044f6114d0565b8181038181111561044f5761044f6114d056fea2646970667358221220146b4c3de108c69b1f2fc7f7ee2069f309659c0e6b08a4e7030cab7d6dee23e264736f6c63430008140033",
+  "numDeployments": 2,
+  "solcInputHash": "4c0bc162839a60251af4429d3de9d238",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.30+commit.73712a01\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"initialOwner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"batchMinterAddress_\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"pauseAddress_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"ArrayLengthMismatch\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"BatchMintAmountExceedsLimit\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"BatchMintCooldownNotExpired\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"BatchMintLimitCannotBeZero\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"BatchMintingPeriodCompletionPaused\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"BatchSizeTooLarge\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CannotMintToZeroAddress\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CannotMintWhilePaused\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CannotMintZeroAmount\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CannotSetZeroAddress\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"allowance\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"needed\",\"type\":\"uint256\"}],\"name\":\"ERC20InsufficientAllowance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"needed\",\"type\":\"uint256\"}],\"name\":\"ERC20InsufficientBalance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"approver\",\"type\":\"address\"}],\"name\":\"ERC20InvalidApprover\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"ERC20InvalidReceiver\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"ERC20InvalidSender\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"ERC20InvalidSpender\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"EmptyArrays\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NoBatchMintingOccurredThisPeriod\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"OwnerMintAmountExceedsLimit\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"OwnerMintCooldownNotExpired\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"UnauthorizedBatchMinter\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"UnauthorizedPause\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"BatchMint\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newLimit\",\"type\":\"uint256\"}],\"name\":\"BatchMintLimitUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"BatchMintingPeriodCompleted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"}],\"name\":\"MintingPaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"OwnerMint\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"BATCH_MINT_COOLDOWN\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"OWNER_MINT_COOLDOWN\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"OWNER_MINT_LIMIT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"addresses\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"amounts\",\"type\":\"uint256[]\"}],\"name\":\"batchMint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"batchMintLimit\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"batchMinterAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"batchMintingOccurredThisPeriod\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"completeBatchMintingPeriod\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getOwnerMintRemainingCooldown\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getRemainingBatchMintAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getRemainingBatchMintCooldown\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getRemainingOwnerMintAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getTotalBatchMintedInPeriod\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getTotalOwnerMintedInPeriod\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBatchMintTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastOwnerMintTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ownerMint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pauseAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pauseEndTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pauseMinting\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newLimit\",\"type\":\"uint256\"}],\"name\":\"setBatchMintLimit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddress\",\"type\":\"address\"}],\"name\":\"setBatchMinterAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddress\",\"type\":\"address\"}],\"name\":\"setPauseAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalBatchMintedInPeriod\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalOwnerMintedInPeriod\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"errors\":{\"ERC20InsufficientAllowance(address,uint256,uint256)\":[{\"details\":\"Indicates a failure with the `spender`\\u2019s `allowance`. Used in transfers.\",\"params\":{\"allowance\":\"Amount of tokens a `spender` is allowed to operate with.\",\"needed\":\"Minimum amount required to perform a transfer.\",\"spender\":\"Address that may be allowed to operate on tokens without being their owner.\"}}],\"ERC20InsufficientBalance(address,uint256,uint256)\":[{\"details\":\"Indicates an error related to the current `balance` of a `sender`. Used in transfers.\",\"params\":{\"balance\":\"Current balance for the interacting account.\",\"needed\":\"Minimum amount required to perform a transfer.\",\"sender\":\"Address whose tokens are being transferred.\"}}],\"ERC20InvalidApprover(address)\":[{\"details\":\"Indicates a failure with the `approver` of a token to be approved. Used in approvals.\",\"params\":{\"approver\":\"Address initiating an approval operation.\"}}],\"ERC20InvalidReceiver(address)\":[{\"details\":\"Indicates a failure with the token `receiver`. Used in transfers.\",\"params\":{\"receiver\":\"Address to which tokens are being transferred.\"}}],\"ERC20InvalidSender(address)\":[{\"details\":\"Indicates a failure with the token `sender`. Used in transfers.\",\"params\":{\"sender\":\"Address whose tokens are being transferred.\"}}],\"ERC20InvalidSpender(address)\":[{\"details\":\"Indicates a failure with the `spender` to be approved. Used in approvals.\",\"params\":{\"spender\":\"Address that may be allowed to operate on tokens without being their owner.\"}}],\"OwnableInvalidOwner(address)\":[{\"details\":\"The owner is not a valid owner account. (eg. `address(0)`)\"}],\"OwnableUnauthorizedAccount(address)\":[{\"details\":\"The caller account is not authorized to perform an operation.\"}]},\"events\":{\"Approval(address,address,uint256)\":{\"details\":\"Emitted when the allowance of a `spender` for an `owner` is set by a call to {approve}. `value` is the new allowance.\"},\"Transfer(address,address,uint256)\":{\"details\":\"Emitted when `value` tokens are moved from one account (`from`) to another (`to`). Note that `value` may be zero.\"}},\"kind\":\"dev\",\"methods\":{\"allowance(address,address)\":{\"details\":\"See {IERC20-allowance}.\"},\"approve(address,uint256)\":{\"details\":\"See {IERC20-approve}. NOTE: If `value` is the maximum `uint256`, the allowance is not updated on `transferFrom`. This is semantically equivalent to an infinite approval. Requirements: - `spender` cannot be the zero address.\"},\"balanceOf(address)\":{\"details\":\"See {IERC20-balanceOf}.\"},\"batchMint(address[],uint256[])\":{\"details\":\"Only the authorized Batch Minter can call this functionEnforces overall rate limiting and validates all inputsMaximum batch size is 100 to prevent gas issues\",\"params\":{\"addresses\":\"Array of recipient addresses\",\"amounts\":\"Array of amounts to mint (must match addresses array length)\"}},\"completeBatchMintingPeriod()\":{\"details\":\"Only the RPC Bread Minter can call this function after minting has occurredBlocked when minting is paused to prevent period reset during emergency\"},\"constructor\":{\"params\":{\"batchMinterAddress_\":\"The address authorized to perform batch mint/burn operations\",\"initialOwner\":\"The address that will own the contract and receive initial tokens\",\"pauseAddress_\":\"The address authorized to pause minting\"}},\"decimals()\":{\"details\":\"Returns the number of decimals used to get its user representation. For example, if `decimals` equals `2`, a balance of `505` tokens should be displayed to a user as `5.05` (`505 / 10 ** 2`). Tokens usually opt for a value of 18, imitating the relationship between Ether and Wei. This is the default value returned by this function, unless it's overridden. NOTE: This information is only used for _display_ purposes: it in no way affects any of the arithmetic of the contract, including {IERC20-balanceOf} and {IERC20-transfer}.\"},\"getOwnerMintRemainingCooldown()\":{\"returns\":{\"_0\":\"The number of seconds remaining in the owner mint cooldown period (0 if cooldown has passed)\"}},\"getRemainingBatchMintAmount()\":{\"returns\":{\"_0\":\"The amount of tokens that can still be batch minted in the current period\"}},\"getRemainingBatchMintCooldown()\":{\"returns\":{\"_0\":\"The number of seconds remaining in the cooldown period (0 if cooldown has passed)\"}},\"getRemainingOwnerMintAmount()\":{\"returns\":{\"_0\":\"The amount of tokens that can still be owner minted in the current period\"}},\"getTotalBatchMintedInPeriod()\":{\"returns\":{\"_0\":\"The amount of tokens batch minted in the current period\"}},\"getTotalOwnerMintedInPeriod()\":{\"returns\":{\"_0\":\"The amount of tokens owner minted in the current period\"}},\"name()\":{\"details\":\"Returns the name of the token.\"},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"ownerMint(address,uint256)\":{\"details\":\"Only the contract owner can call this functionEnforces 24-hour cooldown and owner mint limitRespects global pause functionality\",\"params\":{\"amount\":\"The amount of tokens to mint\",\"to\":\"The address to mint tokens to\"}},\"pauseMinting()\":{\"details\":\"Only the pause address can call this function\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.\"},\"setBatchMintLimit(uint256)\":{\"details\":\"Only the contract owner can call this function. Limit must be greater than 0\",\"params\":{\"newLimit\":\"The new mint limit in wei (with 18 decimals)\"}},\"setBatchMinterAddress(address)\":{\"details\":\"Only the contract owner can call this function\",\"params\":{\"newAddress\":\"The new address that will be authorized to perform batch operations\"}},\"setPauseAddress(address)\":{\"details\":\"Only the contract owner can call this function\",\"params\":{\"newAddress\":\"The new address that will be authorized to perform pauses\"}},\"symbol()\":{\"details\":\"Returns the symbol of the token, usually a shorter version of the name.\"},\"totalSupply()\":{\"details\":\"See {IERC20-totalSupply}.\"},\"transfer(address,uint256)\":{\"details\":\"See {IERC20-transfer}. Requirements: - `to` cannot be the zero address. - the caller must have a balance of at least `value`.\"},\"transferFrom(address,address,uint256)\":{\"details\":\"See {IERC20-transferFrom}. Emits an {Approval} event indicating the updated allowance. This is not required by the EIP. See the note at the beginning of {ERC20}. NOTE: Does not update the allowance if the current allowance is the maximum `uint256`. Requirements: - `from` and `to` cannot be the zero address. - `from` must have a balance of at least `value`. - the caller must have allowance for ``from``'s tokens of at least `value`.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"batchMint(address[],uint256[])\":{\"notice\":\"Mints tokens to multiple addresses in a single transaction\"},\"completeBatchMintingPeriod()\":{\"notice\":\"Completes the current batch minting period and resets for the next period\"},\"getOwnerMintRemainingCooldown()\":{\"notice\":\"Returns the remaining cooldown time before owner minting can resume\"},\"getRemainingBatchMintAmount()\":{\"notice\":\"Returns the remaining amount that can be batch minted in the current period\"},\"getRemainingBatchMintCooldown()\":{\"notice\":\"Returns the remaining cooldown time before batch minting can resume globally\"},\"getRemainingOwnerMintAmount()\":{\"notice\":\"Returns the remaining amount that can be owner minted in the current period\"},\"getTotalBatchMintedInPeriod()\":{\"notice\":\"Returns the amount of tokens batch minted in the current period\"},\"getTotalOwnerMintedInPeriod()\":{\"notice\":\"Returns the amount of tokens owner minted in the current period\"},\"ownerMint(address,uint256)\":{\"notice\":\"Mints tokens to a single address (can be called by owner only)\"},\"pauseMinting()\":{\"notice\":\"Pauses the minting functionality for 24 hours\"},\"setBatchMintLimit(uint256)\":{\"notice\":\"Sets the maximum amount that can be minted per cooldown period globally\"},\"setBatchMinterAddress(address)\":{\"notice\":\"Updates the Batch Minter address\"},\"setPauseAddress(address)\":{\"notice\":\"Updates the address that has pausing privileges\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/BuidlGuidlBread.sol\":\"BuidlGuidlBread\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/access/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (access/Ownable.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {Context} from \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * The initial owner is set to the address provided by the deployer. This can\\n * later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\nabstract contract Ownable is Context {\\n    address private _owner;\\n\\n    /**\\n     * @dev The caller account is not authorized to perform an operation.\\n     */\\n    error OwnableUnauthorizedAccount(address account);\\n\\n    /**\\n     * @dev The owner is not a valid owner account. (eg. `address(0)`)\\n     */\\n    error OwnableInvalidOwner(address owner);\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the address provided by the deployer as the initial owner.\\n     */\\n    constructor(address initialOwner) {\\n        if (initialOwner == address(0)) {\\n            revert OwnableInvalidOwner(address(0));\\n        }\\n        _transferOwnership(initialOwner);\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        _checkOwner();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if the sender is not the owner.\\n     */\\n    function _checkOwner() internal view virtual {\\n        if (owner() != _msgSender()) {\\n            revert OwnableUnauthorizedAccount(_msgSender());\\n        }\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby disabling any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public virtual onlyOwner {\\n        _transferOwnership(address(0));\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        if (newOwner == address(0)) {\\n            revert OwnableInvalidOwner(address(0));\\n        }\\n        _transferOwnership(newOwner);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Internal function without access restriction.\\n     */\\n    function _transferOwnership(address newOwner) internal virtual {\\n        address oldOwner = _owner;\\n        _owner = newOwner;\\n        emit OwnershipTransferred(oldOwner, newOwner);\\n    }\\n}\\n\",\"keccak256\":\"0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb\",\"license\":\"MIT\"},\"@openzeppelin/contracts/interfaces/draft-IERC6093.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (interfaces/draft-IERC6093.sol)\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Standard ERC20 Errors\\n * Interface of the https://eips.ethereum.org/EIPS/eip-6093[ERC-6093] custom errors for ERC20 tokens.\\n */\\ninterface IERC20Errors {\\n    /**\\n     * @dev Indicates an error related to the current `balance` of a `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     * @param balance Current balance for the interacting account.\\n     * @param needed Minimum amount required to perform a transfer.\\n     */\\n    error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);\\n\\n    /**\\n     * @dev Indicates a failure with the token `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     */\\n    error ERC20InvalidSender(address sender);\\n\\n    /**\\n     * @dev Indicates a failure with the token `receiver`. Used in transfers.\\n     * @param receiver Address to which tokens are being transferred.\\n     */\\n    error ERC20InvalidReceiver(address receiver);\\n\\n    /**\\n     * @dev Indicates a failure with the `spender`\\u2019s `allowance`. Used in transfers.\\n     * @param spender Address that may be allowed to operate on tokens without being their owner.\\n     * @param allowance Amount of tokens a `spender` is allowed to operate with.\\n     * @param needed Minimum amount required to perform a transfer.\\n     */\\n    error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);\\n\\n    /**\\n     * @dev Indicates a failure with the `approver` of a token to be approved. Used in approvals.\\n     * @param approver Address initiating an approval operation.\\n     */\\n    error ERC20InvalidApprover(address approver);\\n\\n    /**\\n     * @dev Indicates a failure with the `spender` to be approved. Used in approvals.\\n     * @param spender Address that may be allowed to operate on tokens without being their owner.\\n     */\\n    error ERC20InvalidSpender(address spender);\\n}\\n\\n/**\\n * @dev Standard ERC721 Errors\\n * Interface of the https://eips.ethereum.org/EIPS/eip-6093[ERC-6093] custom errors for ERC721 tokens.\\n */\\ninterface IERC721Errors {\\n    /**\\n     * @dev Indicates that an address can't be an owner. For example, `address(0)` is a forbidden owner in EIP-20.\\n     * Used in balance queries.\\n     * @param owner Address of the current owner of a token.\\n     */\\n    error ERC721InvalidOwner(address owner);\\n\\n    /**\\n     * @dev Indicates a `tokenId` whose `owner` is the zero address.\\n     * @param tokenId Identifier number of a token.\\n     */\\n    error ERC721NonexistentToken(uint256 tokenId);\\n\\n    /**\\n     * @dev Indicates an error related to the ownership over a particular token. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     * @param tokenId Identifier number of a token.\\n     * @param owner Address of the current owner of a token.\\n     */\\n    error ERC721IncorrectOwner(address sender, uint256 tokenId, address owner);\\n\\n    /**\\n     * @dev Indicates a failure with the token `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     */\\n    error ERC721InvalidSender(address sender);\\n\\n    /**\\n     * @dev Indicates a failure with the token `receiver`. Used in transfers.\\n     * @param receiver Address to which tokens are being transferred.\\n     */\\n    error ERC721InvalidReceiver(address receiver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator`\\u2019s approval. Used in transfers.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     * @param tokenId Identifier number of a token.\\n     */\\n    error ERC721InsufficientApproval(address operator, uint256 tokenId);\\n\\n    /**\\n     * @dev Indicates a failure with the `approver` of a token to be approved. Used in approvals.\\n     * @param approver Address initiating an approval operation.\\n     */\\n    error ERC721InvalidApprover(address approver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator` to be approved. Used in approvals.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     */\\n    error ERC721InvalidOperator(address operator);\\n}\\n\\n/**\\n * @dev Standard ERC1155 Errors\\n * Interface of the https://eips.ethereum.org/EIPS/eip-6093[ERC-6093] custom errors for ERC1155 tokens.\\n */\\ninterface IERC1155Errors {\\n    /**\\n     * @dev Indicates an error related to the current `balance` of a `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     * @param balance Current balance for the interacting account.\\n     * @param needed Minimum amount required to perform a transfer.\\n     * @param tokenId Identifier number of a token.\\n     */\\n    error ERC1155InsufficientBalance(address sender, uint256 balance, uint256 needed, uint256 tokenId);\\n\\n    /**\\n     * @dev Indicates a failure with the token `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     */\\n    error ERC1155InvalidSender(address sender);\\n\\n    /**\\n     * @dev Indicates a failure with the token `receiver`. Used in transfers.\\n     * @param receiver Address to which tokens are being transferred.\\n     */\\n    error ERC1155InvalidReceiver(address receiver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator`\\u2019s approval. Used in transfers.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     * @param owner Address of the current owner of a token.\\n     */\\n    error ERC1155MissingApprovalForAll(address operator, address owner);\\n\\n    /**\\n     * @dev Indicates a failure with the `approver` of a token to be approved. Used in approvals.\\n     * @param approver Address initiating an approval operation.\\n     */\\n    error ERC1155InvalidApprover(address approver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator` to be approved. Used in approvals.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     */\\n    error ERC1155InvalidOperator(address operator);\\n\\n    /**\\n     * @dev Indicates an array length mismatch between ids and values in a safeBatchTransferFrom operation.\\n     * Used in batch transfers.\\n     * @param idsLength Length of the array of token identifiers\\n     * @param valuesLength Length of the array of token amounts\\n     */\\n    error ERC1155InvalidArrayLength(uint256 idsLength, uint256 valuesLength);\\n}\\n\",\"keccak256\":\"0x60c65f701957fdd6faea1acb0bb45825791d473693ed9ecb34726fdfaa849dd7\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/ERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/ERC20.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {IERC20} from \\\"./IERC20.sol\\\";\\nimport {IERC20Metadata} from \\\"./extensions/IERC20Metadata.sol\\\";\\nimport {Context} from \\\"../../utils/Context.sol\\\";\\nimport {IERC20Errors} from \\\"../../interfaces/draft-IERC6093.sol\\\";\\n\\n/**\\n * @dev Implementation of the {IERC20} interface.\\n *\\n * This implementation is agnostic to the way tokens are created. This means\\n * that a supply mechanism has to be added in a derived contract using {_mint}.\\n *\\n * TIP: For a detailed writeup see our guide\\n * https://forum.openzeppelin.com/t/how-to-implement-erc20-supply-mechanisms/226[How\\n * to implement supply mechanisms].\\n *\\n * The default value of {decimals} is 18. To change this, you should override\\n * this function so it returns a different value.\\n *\\n * We have followed general OpenZeppelin Contracts guidelines: functions revert\\n * instead returning `false` on failure. This behavior is nonetheless\\n * conventional and does not conflict with the expectations of ERC20\\n * applications.\\n *\\n * Additionally, an {Approval} event is emitted on calls to {transferFrom}.\\n * This allows applications to reconstruct the allowance for all accounts just\\n * by listening to said events. Other implementations of the EIP may not emit\\n * these events, as it isn't required by the specification.\\n */\\nabstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {\\n    mapping(address account => uint256) private _balances;\\n\\n    mapping(address account => mapping(address spender => uint256)) private _allowances;\\n\\n    uint256 private _totalSupply;\\n\\n    string private _name;\\n    string private _symbol;\\n\\n    /**\\n     * @dev Sets the values for {name} and {symbol}.\\n     *\\n     * All two of these values are immutable: they can only be set once during\\n     * construction.\\n     */\\n    constructor(string memory name_, string memory symbol_) {\\n        _name = name_;\\n        _symbol = symbol_;\\n    }\\n\\n    /**\\n     * @dev Returns the name of the token.\\n     */\\n    function name() public view virtual returns (string memory) {\\n        return _name;\\n    }\\n\\n    /**\\n     * @dev Returns the symbol of the token, usually a shorter version of the\\n     * name.\\n     */\\n    function symbol() public view virtual returns (string memory) {\\n        return _symbol;\\n    }\\n\\n    /**\\n     * @dev Returns the number of decimals used to get its user representation.\\n     * For example, if `decimals` equals `2`, a balance of `505` tokens should\\n     * be displayed to a user as `5.05` (`505 / 10 ** 2`).\\n     *\\n     * Tokens usually opt for a value of 18, imitating the relationship between\\n     * Ether and Wei. This is the default value returned by this function, unless\\n     * it's overridden.\\n     *\\n     * NOTE: This information is only used for _display_ purposes: it in\\n     * no way affects any of the arithmetic of the contract, including\\n     * {IERC20-balanceOf} and {IERC20-transfer}.\\n     */\\n    function decimals() public view virtual returns (uint8) {\\n        return 18;\\n    }\\n\\n    /**\\n     * @dev See {IERC20-totalSupply}.\\n     */\\n    function totalSupply() public view virtual returns (uint256) {\\n        return _totalSupply;\\n    }\\n\\n    /**\\n     * @dev See {IERC20-balanceOf}.\\n     */\\n    function balanceOf(address account) public view virtual returns (uint256) {\\n        return _balances[account];\\n    }\\n\\n    /**\\n     * @dev See {IERC20-transfer}.\\n     *\\n     * Requirements:\\n     *\\n     * - `to` cannot be the zero address.\\n     * - the caller must have a balance of at least `value`.\\n     */\\n    function transfer(address to, uint256 value) public virtual returns (bool) {\\n        address owner = _msgSender();\\n        _transfer(owner, to, value);\\n        return true;\\n    }\\n\\n    /**\\n     * @dev See {IERC20-allowance}.\\n     */\\n    function allowance(address owner, address spender) public view virtual returns (uint256) {\\n        return _allowances[owner][spender];\\n    }\\n\\n    /**\\n     * @dev See {IERC20-approve}.\\n     *\\n     * NOTE: If `value` is the maximum `uint256`, the allowance is not updated on\\n     * `transferFrom`. This is semantically equivalent to an infinite approval.\\n     *\\n     * Requirements:\\n     *\\n     * - `spender` cannot be the zero address.\\n     */\\n    function approve(address spender, uint256 value) public virtual returns (bool) {\\n        address owner = _msgSender();\\n        _approve(owner, spender, value);\\n        return true;\\n    }\\n\\n    /**\\n     * @dev See {IERC20-transferFrom}.\\n     *\\n     * Emits an {Approval} event indicating the updated allowance. This is not\\n     * required by the EIP. See the note at the beginning of {ERC20}.\\n     *\\n     * NOTE: Does not update the allowance if the current allowance\\n     * is the maximum `uint256`.\\n     *\\n     * Requirements:\\n     *\\n     * - `from` and `to` cannot be the zero address.\\n     * - `from` must have a balance of at least `value`.\\n     * - the caller must have allowance for ``from``'s tokens of at least\\n     * `value`.\\n     */\\n    function transferFrom(address from, address to, uint256 value) public virtual returns (bool) {\\n        address spender = _msgSender();\\n        _spendAllowance(from, spender, value);\\n        _transfer(from, to, value);\\n        return true;\\n    }\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from `from` to `to`.\\n     *\\n     * This internal function is equivalent to {transfer}, and can be used to\\n     * e.g. implement automatic token fees, slashing mechanisms, etc.\\n     *\\n     * Emits a {Transfer} event.\\n     *\\n     * NOTE: This function is not virtual, {_update} should be overridden instead.\\n     */\\n    function _transfer(address from, address to, uint256 value) internal {\\n        if (from == address(0)) {\\n            revert ERC20InvalidSender(address(0));\\n        }\\n        if (to == address(0)) {\\n            revert ERC20InvalidReceiver(address(0));\\n        }\\n        _update(from, to, value);\\n    }\\n\\n    /**\\n     * @dev Transfers a `value` amount of tokens from `from` to `to`, or alternatively mints (or burns) if `from`\\n     * (or `to`) is the zero address. All customizations to transfers, mints, and burns should be done by overriding\\n     * this function.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function _update(address from, address to, uint256 value) internal virtual {\\n        if (from == address(0)) {\\n            // Overflow check required: The rest of the code assumes that totalSupply never overflows\\n            _totalSupply += value;\\n        } else {\\n            uint256 fromBalance = _balances[from];\\n            if (fromBalance < value) {\\n                revert ERC20InsufficientBalance(from, fromBalance, value);\\n            }\\n            unchecked {\\n                // Overflow not possible: value <= fromBalance <= totalSupply.\\n                _balances[from] = fromBalance - value;\\n            }\\n        }\\n\\n        if (to == address(0)) {\\n            unchecked {\\n                // Overflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.\\n                _totalSupply -= value;\\n            }\\n        } else {\\n            unchecked {\\n                // Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.\\n                _balances[to] += value;\\n            }\\n        }\\n\\n        emit Transfer(from, to, value);\\n    }\\n\\n    /**\\n     * @dev Creates a `value` amount of tokens and assigns them to `account`, by transferring it from address(0).\\n     * Relies on the `_update` mechanism\\n     *\\n     * Emits a {Transfer} event with `from` set to the zero address.\\n     *\\n     * NOTE: This function is not virtual, {_update} should be overridden instead.\\n     */\\n    function _mint(address account, uint256 value) internal {\\n        if (account == address(0)) {\\n            revert ERC20InvalidReceiver(address(0));\\n        }\\n        _update(address(0), account, value);\\n    }\\n\\n    /**\\n     * @dev Destroys a `value` amount of tokens from `account`, lowering the total supply.\\n     * Relies on the `_update` mechanism.\\n     *\\n     * Emits a {Transfer} event with `to` set to the zero address.\\n     *\\n     * NOTE: This function is not virtual, {_update} should be overridden instead\\n     */\\n    function _burn(address account, uint256 value) internal {\\n        if (account == address(0)) {\\n            revert ERC20InvalidSender(address(0));\\n        }\\n        _update(account, address(0), value);\\n    }\\n\\n    /**\\n     * @dev Sets `value` as the allowance of `spender` over the `owner` s tokens.\\n     *\\n     * This internal function is equivalent to `approve`, and can be used to\\n     * e.g. set automatic allowances for certain subsystems, etc.\\n     *\\n     * Emits an {Approval} event.\\n     *\\n     * Requirements:\\n     *\\n     * - `owner` cannot be the zero address.\\n     * - `spender` cannot be the zero address.\\n     *\\n     * Overrides to this logic should be done to the variant with an additional `bool emitEvent` argument.\\n     */\\n    function _approve(address owner, address spender, uint256 value) internal {\\n        _approve(owner, spender, value, true);\\n    }\\n\\n    /**\\n     * @dev Variant of {_approve} with an optional flag to enable or disable the {Approval} event.\\n     *\\n     * By default (when calling {_approve}) the flag is set to true. On the other hand, approval changes made by\\n     * `_spendAllowance` during the `transferFrom` operation set the flag to false. This saves gas by not emitting any\\n     * `Approval` event during `transferFrom` operations.\\n     *\\n     * Anyone who wishes to continue emitting `Approval` events on the`transferFrom` operation can force the flag to\\n     * true using the following override:\\n     * ```\\n     * function _approve(address owner, address spender, uint256 value, bool) internal virtual override {\\n     *     super._approve(owner, spender, value, true);\\n     * }\\n     * ```\\n     *\\n     * Requirements are the same as {_approve}.\\n     */\\n    function _approve(address owner, address spender, uint256 value, bool emitEvent) internal virtual {\\n        if (owner == address(0)) {\\n            revert ERC20InvalidApprover(address(0));\\n        }\\n        if (spender == address(0)) {\\n            revert ERC20InvalidSpender(address(0));\\n        }\\n        _allowances[owner][spender] = value;\\n        if (emitEvent) {\\n            emit Approval(owner, spender, value);\\n        }\\n    }\\n\\n    /**\\n     * @dev Updates `owner` s allowance for `spender` based on spent `value`.\\n     *\\n     * Does not update the allowance value in case of infinite allowance.\\n     * Revert if not enough allowance is available.\\n     *\\n     * Does not emit an {Approval} event.\\n     */\\n    function _spendAllowance(address owner, address spender, uint256 value) internal virtual {\\n        uint256 currentAllowance = allowance(owner, spender);\\n        if (currentAllowance != type(uint256).max) {\\n            if (currentAllowance < value) {\\n                revert ERC20InsufficientAllowance(spender, currentAllowance, value);\\n            }\\n            unchecked {\\n                _approve(owner, spender, currentAllowance - value, false);\\n            }\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0xc3e1fa9d1987f8d349dfb4d6fe93bf2ca014b52ba335cfac30bfe71e357e6f80\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/IERC20.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Interface of the ERC20 standard as defined in the EIP.\\n */\\ninterface IERC20 {\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n\\n    /**\\n     * @dev Returns the value of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the value of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from the caller's account to `to`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address to, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets a `value` amount of tokens as the allowance of `spender` over the\\n     * caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from `from` to `to` using the\\n     * allowance mechanism. `value` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(address from, address to, uint256 value) external returns (bool);\\n}\\n\",\"keccak256\":\"0xc6a8ff0ea489379b61faa647490411b80102578440ab9d84e9a957cc12164e70\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/extensions/IERC20Metadata.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {IERC20} from \\\"../IERC20.sol\\\";\\n\\n/**\\n * @dev Interface for the optional metadata functions from the ERC20 standard.\\n */\\ninterface IERC20Metadata is IERC20 {\\n    /**\\n     * @dev Returns the name of the token.\\n     */\\n    function name() external view returns (string memory);\\n\\n    /**\\n     * @dev Returns the symbol of the token.\\n     */\\n    function symbol() external view returns (string memory);\\n\\n    /**\\n     * @dev Returns the decimals places of the token.\\n     */\\n    function decimals() external view returns (uint8);\\n}\\n\",\"keccak256\":\"0xaa761817f6cd7892fcf158b3c776b34551cde36f48ff9703d53898bc45a94ea2\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.1) (utils/Context.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n\\n    function _contextSuffixLength() internal view virtual returns (uint256) {\\n        return 0;\\n    }\\n}\\n\",\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"license\":\"MIT\"},\"contracts/BuidlGuidlBread.sol\":{\"content\":\"//SPDX-License-Identifier: MIT\\npragma solidity 0.8.30;\\n\\nimport {ERC20} from \\\"@openzeppelin/contracts/token/ERC20/ERC20.sol\\\";\\nimport {Ownable} from \\\"@openzeppelin/contracts/access/Ownable.sol\\\";\\nimport {IBuidlGuidlBread} from \\\"./IBuidlGuidlBread.sol\\\";\\n\\ncontract BuidlGuidlBread is ERC20, Ownable, IBuidlGuidlBread {\\n    uint256 public constant BATCH_MINT_COOLDOWN = 23 hours;\\n    uint256 public constant OWNER_MINT_COOLDOWN = 24 hours;\\n    uint256 public constant OWNER_MINT_LIMIT = 10_000 ether;\\n    address public batchMinterAddress;\\n    address public pauseAddress;\\n    uint256 public batchMintLimit = 420 ether;\\n    uint256 public lastBatchMintTime;\\n    uint256 public totalBatchMintedInPeriod;    \\n    uint256 public lastOwnerMintTime;\\n    uint256 public totalOwnerMintedInPeriod;\\n    uint256 public pauseEndTime = 0;\\n    bool public batchMintingOccurredThisPeriod;\\n\\n    /// @param initialOwner The address that will own the contract and receive initial tokens\\n    /// @param batchMinterAddress_ The address authorized to perform batch mint/burn operations\\n    /// @param pauseAddress_ The address authorized to pause minting\\n    constructor(\\n        address initialOwner,\\n        address batchMinterAddress_,\\n        address pauseAddress_\\n    ) ERC20(\\\"BuidlGuidl Bread\\\", \\\"BGBRD\\\") Ownable(initialOwner) {\\n        if (batchMinterAddress_ == address(0)) revert CannotSetZeroAddress();\\n        if (pauseAddress_ == address(0)) revert CannotSetZeroAddress();\\n        batchMinterAddress = batchMinterAddress_;\\n        pauseAddress = pauseAddress_;\\n    }\\n\\n    /// @notice Updates the Batch Minter address\\n    /// @param newAddress The new address that will be authorized to perform batch operations\\n    /// @dev Only the contract owner can call this function\\n    function setBatchMinterAddress(address newAddress) public onlyOwner {\\n        if (newAddress == address(0)) revert CannotSetZeroAddress();\\n        batchMinterAddress = newAddress;\\n    }\\n\\n    /// @notice Updates the address that has pausing privileges\\n    /// @param newAddress The new address that will be authorized to perform pauses\\n    /// @dev Only the contract owner can call this function\\n    function setPauseAddress(address newAddress) public onlyOwner {\\n        if (newAddress == address(0)) revert CannotSetZeroAddress();\\n        pauseAddress = newAddress;\\n    }\\n\\n    /// @notice Sets the maximum amount that can be minted per cooldown period globally\\n    /// @param newLimit The new mint limit in wei (with 18 decimals)\\n    /// @dev Only the contract owner can call this function. Limit must be greater than 0\\n    function setBatchMintLimit(uint256 newLimit) public onlyOwner {\\n        if (newLimit == 0) revert BatchMintLimitCannotBeZero();\\n        batchMintLimit = newLimit;\\n        emit BatchMintLimitUpdated(newLimit);\\n    }\\n\\n    modifier onlyBatchMinter() {\\n        if (msg.sender != batchMinterAddress) revert UnauthorizedBatchMinter();\\n        _;\\n    }\\n\\n    modifier onlyPause() {\\n        if (msg.sender != pauseAddress) revert UnauthorizedPause();\\n        _;\\n    }\\n\\n    /// @notice Pauses the minting functionality for 24 hours\\n    /// @dev Only the pause address can call this function\\n    function pauseMinting() public onlyPause {\\n        pauseEndTime = block.timestamp + 24 hours;\\n        emit MintingPaused(pauseEndTime);\\n    }\\n\\n    /// @notice Returns the remaining cooldown time before batch minting can resume globally\\n    /// @return The number of seconds remaining in the cooldown period (0 if cooldown has passed)\\n    function getRemainingBatchMintCooldown() public view returns (uint256) {\\n        uint256 timeSinceLastReset = block.timestamp - lastBatchMintTime;\\n\\n        if (timeSinceLastReset >= BATCH_MINT_COOLDOWN) {\\n            return 0;\\n        }\\n\\n        return BATCH_MINT_COOLDOWN - timeSinceLastReset;\\n    }\\n\\n    /// @notice Returns the amount of tokens batch minted in the current period\\n    /// @return The amount of tokens batch minted in the current period\\n    function getTotalBatchMintedInPeriod() public view returns (uint256) {\\n        return totalBatchMintedInPeriod;\\n    }\\n\\n    /// @notice Returns the remaining amount that can be batch minted in the current period\\n    /// @return The amount of tokens that can still be batch minted in the current period\\n    function getRemainingBatchMintAmount() public view returns (uint256) {\\n        if (totalBatchMintedInPeriod >= batchMintLimit) {\\n            return 0;\\n        }\\n\\n        return batchMintLimit - totalBatchMintedInPeriod;\\n    }\\n\\n    /// @notice Completes the current batch minting period and resets for the next period\\n    /// @dev Only the RPC Bread Minter can call this function after minting has occurred\\n    /// @dev Blocked when minting is paused to prevent period reset during emergency\\n    function completeBatchMintingPeriod() public onlyBatchMinter {\\n        if (block.timestamp < pauseEndTime) revert BatchMintingPeriodCompletionPaused();\\n        if (!batchMintingOccurredThisPeriod) revert NoBatchMintingOccurredThisPeriod();\\n        \\n        // Reset the period\\n        totalBatchMintedInPeriod = 0;\\n        lastBatchMintTime = block.timestamp;\\n        batchMintingOccurredThisPeriod = false;\\n        \\n        emit BatchMintingPeriodCompleted(block.timestamp);\\n    }\\n\\n    /// @notice Mints tokens to multiple addresses in a single transaction\\n    /// @param addresses Array of recipient addresses\\n    /// @param amounts Array of amounts to mint (must match addresses array length)\\n    /// @dev Only the authorized Batch Minter can call this function\\n    /// @dev Enforces overall rate limiting and validates all inputs\\n    /// @dev Maximum batch size is 100 to prevent gas issues\\n    function batchMint(address[] calldata addresses, uint256[] calldata amounts) public onlyBatchMinter {\\n        if (addresses.length != amounts.length) revert ArrayLengthMismatch();\\n        if (addresses.length == 0) revert EmptyArrays();\\n        if (addresses.length > 100) revert BatchSizeTooLarge(); // Prevent gas issues with large arrays\\n        if (block.timestamp < pauseEndTime) revert CannotMintWhilePaused();\\n\\n        // Calculate total amount to check against global limit\\n        uint256 totalAmount = 0;\\n        for (uint256 i = 0; i < amounts.length; i++) {\\n            if (amounts[i] == 0) revert CannotMintZeroAmount();\\n            totalAmount += amounts[i];\\n        }\\n\\n        // Check global rate limit for the total amount\\n        _checkBatchMintRateLimit(totalAmount);\\n\\n        // Perform the mints\\n        for (uint256 i = 0; i < addresses.length; i++) {\\n            if (addresses[i] == address(0)) revert CannotMintToZeroAddress();\\n            _mint(addresses[i], amounts[i]);\\n            emit BatchMint(addresses[i], amounts[i]);\\n        }\\n\\n        // Update global tracking\\n        totalBatchMintedInPeriod += totalAmount;\\n        batchMintingOccurredThisPeriod = true;\\n    }\\n\\n    /// @notice Returns the remaining cooldown time before owner minting can resume\\n    /// @return The number of seconds remaining in the owner mint cooldown period (0 if cooldown has passed)\\n    function getOwnerMintRemainingCooldown() public view returns (uint256) {\\n        uint256 timeSinceLastMint = block.timestamp - lastOwnerMintTime;\\n\\n        if (timeSinceLastMint >= OWNER_MINT_COOLDOWN) {\\n            return 0;\\n        }\\n\\n        return OWNER_MINT_COOLDOWN - timeSinceLastMint;\\n    }\\n\\n    /// @notice Returns the amount of tokens owner minted in the current period\\n    /// @return The amount of tokens owner minted in the current period\\n    function getTotalOwnerMintedInPeriod() public view returns (uint256) {\\n        return totalOwnerMintedInPeriod;\\n    }\\n\\n    /// @notice Returns the remaining amount that can be owner minted in the current period\\n    /// @return The amount of tokens that can still be owner minted in the current period\\n    function getRemainingOwnerMintAmount() public view returns (uint256) {\\n        if (totalOwnerMintedInPeriod >= OWNER_MINT_LIMIT) {\\n            return 0;\\n        }\\n\\n        return OWNER_MINT_LIMIT - totalOwnerMintedInPeriod;\\n    }\\n\\n    /// @notice Mints tokens to a single address (can be called by owner only)\\n    /// @param to The address to mint tokens to\\n    /// @param amount The amount of tokens to mint\\n    /// @dev Only the contract owner can call this function\\n    /// @dev Enforces 24-hour cooldown and owner mint limit\\n    /// @dev Respects global pause functionality\\n    function ownerMint(address to, uint256 amount) public onlyOwner {\\n        if (block.timestamp < pauseEndTime) revert CannotMintWhilePaused();\\n        if (amount == 0) revert CannotMintZeroAmount();\\n        if (to == address(0)) revert CannotMintToZeroAddress();\\n        \\n        // If cooldown period has passed, reset the period\\n        if (block.timestamp >= lastOwnerMintTime + OWNER_MINT_COOLDOWN) {\\n            totalOwnerMintedInPeriod = 0;\\n        } else {\\n            // Still in cooldown period, check if we would exceed limit\\n            if (totalOwnerMintedInPeriod + amount > OWNER_MINT_LIMIT) {\\n                revert OwnerMintAmountExceedsLimit();\\n            }\\n        }\\n        \\n        // Check if amount would exceed limit for this period\\n        if (amount > OWNER_MINT_LIMIT) revert OwnerMintAmountExceedsLimit();\\n        \\n        _mint(to, amount);\\n        \\n        // Update tracking\\n        totalOwnerMintedInPeriod += amount;\\n        lastOwnerMintTime = block.timestamp;\\n        \\n        emit OwnerMint(to, amount);\\n    }\\n\\n    /// @dev Internal function to check and enforce batch mint rate limiting for token minting\\n    /// @param amount The amount of tokens being minted\\n    /// @notice Checks if cooldown has passed and validates amount against current period limit\\n    function _checkBatchMintRateLimit(uint256 amount) internal view {\\n        // Check if cooldown period has passed since last reset\\n        if (block.timestamp < lastBatchMintTime + BATCH_MINT_COOLDOWN) revert BatchMintCooldownNotExpired();\\n        \\n        // Check if the amount would exceed the global limit for this period\\n        if (totalBatchMintedInPeriod + amount > batchMintLimit) revert BatchMintAmountExceedsLimit();\\n    }\\n}\\n\",\"keccak256\":\"0x372a7f412bbbabeeb1a4232e8c1de3b8a30e2a9463a918f76cf697fda5bac74d\",\"license\":\"MIT\"},\"contracts/IBuidlGuidlBread.sol\":{\"content\":\"//SPDX-License-Identifier: MIT\\npragma solidity 0.8.30;\\n\\ninterface IBuidlGuidlBread {\\n    event BatchMint(address indexed user, uint256 amount);\\n    event OwnerMint(address indexed to, uint256 amount);\\n    event BatchMintLimitUpdated(uint256 newLimit);\\n    event MintingPaused(uint256 endTime);\\n    event BatchMintingPeriodCompleted(uint256 timestamp);\\n\\n    error CannotSetZeroAddress();\\n    error BatchMintLimitCannotBeZero();\\n    error UnauthorizedBatchMinter();\\n    error UnauthorizedPause();\\n    error BatchMintCooldownNotExpired();\\n    error BatchMintAmountExceedsLimit();\\n    error BatchMintingPeriodCompletionPaused();\\n    error NoBatchMintingOccurredThisPeriod();\\n    error ArrayLengthMismatch();\\n    error EmptyArrays();\\n    error BatchSizeTooLarge();\\n    error CannotMintWhilePaused();\\n    error CannotMintZeroAmount();\\n    error CannotMintToZeroAddress();\\n    error OwnerMintCooldownNotExpired();\\n    error OwnerMintAmountExceedsLimit();\\n} \",\"keccak256\":\"0x721ea3f94467519f0dfcb4a6e5ebc1af688737ae255a945cb4391ebc27454b36\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x60806040526816c4abbebea01000006008556000600d5534801561002257600080fd5b506040516116f03803806116f0833981016040819052610041916101ce565b826040518060400160405280601081526020016f109d5a591b11dd5a591b08109c99585960821b815250604051806040016040528060058152602001641091d0949160da1b815250816003908161009891906102b0565b5060046100a582826102b0565b5050506001600160a01b0381166100d657604051631e4fbdf760e01b81526000600482015260240160405180910390fd5b6100df81610160565b506001600160a01b03821661010757604051632969679960e11b815260040160405180910390fd5b6001600160a01b03811661012e57604051632969679960e11b815260040160405180910390fd5b600680546001600160a01b039384166001600160a01b031991821617909155600780549290931691161790555061036e565b600580546001600160a01b038381166001600160a01b0319831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b80516001600160a01b03811681146101c957600080fd5b919050565b6000806000606084860312156101e357600080fd5b6101ec846101b2565b92506101fa602085016101b2565b9150610208604085016101b2565b90509250925092565b634e487b7160e01b600052604160045260246000fd5b600181811c9082168061023b57607f821691505b60208210810361025b57634e487b7160e01b600052602260045260246000fd5b50919050565b601f8211156102ab57806000526020600020601f840160051c810160208510156102885750805b601f840160051c820191505b818110156102a85760008155600101610294565b50505b505050565b81516001600160401b038111156102c9576102c9610211565b6102dd816102d78454610227565b84610261565b6020601f82116001811461031157600083156102f95750848201515b600019600385901b1c1916600184901b1784556102a8565b600084815260208120601f198516915b828110156103415787850151825560209485019460019092019101610321565b508482101561035f5786840151600019600387901b60f8161c191681555b50505050600190811b01905550565b6113738061037d6000396000f3fe608060405234801561001057600080fd5b50600436106102275760003560e01c806368573107116101305780639ca40756116100b8578063cf1614851161007c578063cf1614851461042a578063da8fbf2a14610434578063dd62ed3e1461043c578063f2fde38b14610475578063f4d98ca31461048857600080fd5b80639ca40756146103eb578063a2e2eb13146103f3578063a9059cbb14610406578063afe1330214610419578063c6bd6bc81461042157600080fd5b8063800f0aad116100ff578063800f0aad146103ac57806389c47394146103b55780638da5cb5b146103c857806395d89b41146103d957806396a377af146103e157600080fd5b8063685731071461036057806370a0823114610373578063715018a61461039c5780637ef787da146103a457600080fd5b8063313ce567116101b3578063484b973c11610182578063484b973c146103005780634cd64b4d1461031357806354d8b1761461031c57806357312481146103245780635d12a6ec1461034f57600080fd5b8063313ce567146102d3578063386e867c146102e25780633e1bf393146102ea57806341b99681146102f757600080fd5b80631c312b98116101fa5780631c312b981461028757806323b872dd1461029c57806323e5b0b0146102af5780632bf6b553146102b75780633088f3e4146102c057600080fd5b806306fdde031461022c578063095ea7b31461024a57806318160ddd1461026d5780631a257c1d1461027f575b600080fd5b610234610491565b60405161024191906110b5565b60405180910390f35b61025d61025836600461111f565b610523565b6040519015158152602001610241565b6002545b604051908152602001610241565b600c54610271565b61029a610295366004611149565b61053d565b005b61025d6102aa36600461116b565b61058e565b600a54610271565b610271600d5481565b61029a6102ce366004611149565b6105b2565b60405160128152602001610241565b610271610603565b600e5461025d9060ff1681565b610271600a5481565b61029a61030e36600461111f565b61063b565b61027160095481565b610271610799565b600754610337906001600160a01b031681565b6040516001600160a01b039091168152602001610241565b61027169021e19e0c9bab240000081565b61029a61036e3660046111f4565b6107c1565b610271610381366004611149565b6001600160a01b031660009081526020819052604090205490565b61029a610a48565b61029a610a5c565b610271600b5481565b61029a6103c3366004611265565b610b18565b6005546001600160a01b0316610337565b610234610b7c565b6102716201518081565b610271610b8b565b600654610337906001600160a01b031681565b61025d61041436600461111f565b610bbd565b610271610bcb565b61027160085481565b6102716201437081565b61029a610bfd565b61027161044a36600461127e565b6001600160a01b03918216600090815260016020908152604080832093909416825291909152205490565b61029a610483366004611149565b610c6a565b610271600c5481565b6060600380546104a0906112b1565b80601f01602080910402602001604051908101604052809291908181526020018280546104cc906112b1565b80156105195780601f106104ee57610100808354040283529160200191610519565b820191906000526020600020905b8154815290600101906020018083116104fc57829003601f168201915b5050505050905090565b600033610531818585610cad565b60019150505b92915050565b610545610cbf565b6001600160a01b03811661056c57604051632969679960e11b815260040160405180910390fd5b600680546001600160a01b0319166001600160a01b0392909216919091179055565b60003361059c858285610cec565b6105a7858585610d6a565b506001949350505050565b6105ba610cbf565b6001600160a01b0381166105e157604051632969679960e11b815260040160405180910390fd5b600780546001600160a01b0319166001600160a01b0392909216919091179055565b600080600b54426106149190611301565b905062015180811061062857600091505090565b6106358162015180611301565b91505090565b610643610cbf565b600d544210156106665760405163269576db60e01b815260040160405180910390fd5b80600003610687576040516303ccd49d60e01b815260040160405180910390fd5b6001600160a01b0382166106ae576040516389a4ea1960e01b815260040160405180910390fd5b62015180600b546106bf9190611314565b42106106cf576000600c55610707565b69021e19e0c9bab240000081600c546106e89190611314565b111561070757604051630774b37760e21b815260040160405180910390fd5b69021e19e0c9bab240000081111561073257604051630774b37760e21b815260040160405180910390fd5b61073c8282610dc9565b80600c600082825461074e9190611314565b909155505042600b556040518181526001600160a01b038316907f76dcb19d73dc6c5a49de41d75b9ab52e3d44ca8cd90c330c238bacb4f8b5b4f59060200160405180910390a25050565b6000600854600a54106107ac5750600090565b600a546008546107bc9190611301565b905090565b6006546001600160a01b031633146107ec57604051636093662d60e01b815260040160405180910390fd5b82811461080c5760405163512509d360e11b815260040160405180910390fd5b600083900361082e5760405163a600c81d60e01b815260040160405180910390fd5b606483111561085057604051631e80759560e21b815260040160405180910390fd5b600d544210156108735760405163269576db60e01b815260040160405180910390fd5b6000805b828110156108e65783838281811061089157610891611327565b905060200201356000036108b8576040516303ccd49d60e01b815260040160405180910390fd5b8383828181106108ca576108ca611327565b90506020020135826108dc9190611314565b9150600101610877565b506108f081610e03565b60005b84811015610a1c57600086868381811061090f5761090f611327565b90506020020160208101906109249190611149565b6001600160a01b03160361094b576040516389a4ea1960e01b815260040160405180910390fd5b61099386868381811061096057610960611327565b90506020020160208101906109759190611149565b85858481811061098757610987611327565b90506020020135610dc9565b8585828181106109a5576109a5611327565b90506020020160208101906109ba9190611149565b6001600160a01b03167f4b6dcabdeaeb0ec6121e2e093c11a74bd84844268dc1131fd8ba3b363a82d7e88585848181106109f6576109f6611327565b90506020020135604051610a0c91815260200190565b60405180910390a26001016108f3565b5080600a6000828254610a2f9190611314565b9091555050600e805460ff191660011790555050505050565b610a50610cbf565b610a5a6000610e64565b565b6006546001600160a01b03163314610a8757604051636093662d60e01b815260040160405180910390fd5b600d54421015610aaa57604051631f9618c760e21b815260040160405180910390fd5b600e5460ff16610acd5760405163632150cd60e01b815260040160405180910390fd5b6000600a55426009819055600e805460ff191690556040519081527fb9cecf4f4de9abfb9c14d26ae60e353d6e177707f9179b5937c9baec9fbadfe9906020015b60405180910390a1565b610b20610cbf565b80600003610b4157604051630ced08f560e31b815260040160405180910390fd5b60088190556040518181527fd9e2131a28c9d9de2d1dca598162fa87a666e3007ebf5fb04700450a68a4cff99060200160405180910390a150565b6060600480546104a0906112b1565b600069021e19e0c9bab2400000600c5410610ba65750600090565b600c546107bc9069021e19e0c9bab2400000611301565b600033610531818585610d6a565b60008060095442610bdc9190611301565b9050620143708110610bf057600091505090565b6106358162014370611301565b6007546001600160a01b03163314610c2857604051632ce5db9f60e01b815260040160405180910390fd5b610c354262015180611314565b600d8190556040519081527f38d4174e7163889d8e9bd4aa2078c460fd3a1964ad51aef8de1467ee4b29ae1190602001610b0e565b610c72610cbf565b6001600160a01b038116610ca157604051631e4fbdf760e01b8152600060048201526024015b60405180910390fd5b610caa81610e64565b50565b610cba8383836001610eb6565b505050565b6005546001600160a01b03163314610a5a5760405163118cdaa760e01b8152336004820152602401610c98565b6001600160a01b038381166000908152600160209081526040808320938616835292905220546000198114610d645781811015610d5557604051637dc7a0d960e11b81526001600160a01b03841660048201526024810182905260448101839052606401610c98565b610d6484848484036000610eb6565b50505050565b6001600160a01b038316610d9457604051634b637e8f60e11b815260006004820152602401610c98565b6001600160a01b038216610dbe5760405163ec442f0560e01b815260006004820152602401610c98565b610cba838383610f8b565b6001600160a01b038216610df35760405163ec442f0560e01b815260006004820152602401610c98565b610dff60008383610f8b565b5050565b62014370600954610e149190611314565b421015610e3457604051632ed6564360e21b815260040160405180910390fd5b60085481600a54610e459190611314565b1115610caa57604051635b9b900160e01b815260040160405180910390fd5b600580546001600160a01b038381166001600160a01b0319831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b6001600160a01b038416610ee05760405163e602df0560e01b815260006004820152602401610c98565b6001600160a01b038316610f0a57604051634a1406b160e11b815260006004820152602401610c98565b6001600160a01b0380851660009081526001602090815260408083209387168352929052208290558015610d6457826001600160a01b0316846001600160a01b03167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b92584604051610f7d91815260200190565b60405180910390a350505050565b6001600160a01b038316610fb6578060026000828254610fab9190611314565b909155506110289050565b6001600160a01b038316600090815260208190526040902054818110156110095760405163391434e360e21b81526001600160a01b03851660048201526024810182905260448101839052606401610c98565b6001600160a01b03841660009081526020819052604090209082900390555b6001600160a01b03821661104457600280548290039055611063565b6001600160a01b03821660009081526020819052604090208054820190555b816001600160a01b0316836001600160a01b03167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef836040516110a891815260200190565b60405180910390a3505050565b602081526000825180602084015260005b818110156110e357602081860181015160408684010152016110c6565b506000604082850101526040601f19601f83011684010191505092915050565b80356001600160a01b038116811461111a57600080fd5b919050565b6000806040838503121561113257600080fd5b61113b83611103565b946020939093013593505050565b60006020828403121561115b57600080fd5b61116482611103565b9392505050565b60008060006060848603121561118057600080fd5b61118984611103565b925061119760208501611103565b929592945050506040919091013590565b60008083601f8401126111ba57600080fd5b50813567ffffffffffffffff8111156111d257600080fd5b6020830191508360208260051b85010111156111ed57600080fd5b9250929050565b6000806000806040858703121561120a57600080fd5b843567ffffffffffffffff81111561122157600080fd5b61122d878288016111a8565b909550935050602085013567ffffffffffffffff81111561124d57600080fd5b611259878288016111a8565b95989497509550505050565b60006020828403121561127757600080fd5b5035919050565b6000806040838503121561129157600080fd5b61129a83611103565b91506112a860208401611103565b90509250929050565b600181811c908216806112c557607f821691505b6020821081036112e557634e487b7160e01b600052602260045260246000fd5b50919050565b634e487b7160e01b600052601160045260246000fd5b81810381811115610537576105376112eb565b80820180821115610537576105376112eb565b634e487b7160e01b600052603260045260246000fdfea2646970667358221220001f20b9182fe148aaf344f97bbc78a18321becc55c5894225e9931d8b50ace164736f6c634300081e0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106102275760003560e01c806368573107116101305780639ca40756116100b8578063cf1614851161007c578063cf1614851461042a578063da8fbf2a14610434578063dd62ed3e1461043c578063f2fde38b14610475578063f4d98ca31461048857600080fd5b80639ca40756146103eb578063a2e2eb13146103f3578063a9059cbb14610406578063afe1330214610419578063c6bd6bc81461042157600080fd5b8063800f0aad116100ff578063800f0aad146103ac57806389c47394146103b55780638da5cb5b146103c857806395d89b41146103d957806396a377af146103e157600080fd5b8063685731071461036057806370a0823114610373578063715018a61461039c5780637ef787da146103a457600080fd5b8063313ce567116101b3578063484b973c11610182578063484b973c146103005780634cd64b4d1461031357806354d8b1761461031c57806357312481146103245780635d12a6ec1461034f57600080fd5b8063313ce567146102d3578063386e867c146102e25780633e1bf393146102ea57806341b99681146102f757600080fd5b80631c312b98116101fa5780631c312b981461028757806323b872dd1461029c57806323e5b0b0146102af5780632bf6b553146102b75780633088f3e4146102c057600080fd5b806306fdde031461022c578063095ea7b31461024a57806318160ddd1461026d5780631a257c1d1461027f575b600080fd5b610234610491565b60405161024191906110b5565b60405180910390f35b61025d61025836600461111f565b610523565b6040519015158152602001610241565b6002545b604051908152602001610241565b600c54610271565b61029a610295366004611149565b61053d565b005b61025d6102aa36600461116b565b61058e565b600a54610271565b610271600d5481565b61029a6102ce366004611149565b6105b2565b60405160128152602001610241565b610271610603565b600e5461025d9060ff1681565b610271600a5481565b61029a61030e36600461111f565b61063b565b61027160095481565b610271610799565b600754610337906001600160a01b031681565b6040516001600160a01b039091168152602001610241565b61027169021e19e0c9bab240000081565b61029a61036e3660046111f4565b6107c1565b610271610381366004611149565b6001600160a01b031660009081526020819052604090205490565b61029a610a48565b61029a610a5c565b610271600b5481565b61029a6103c3366004611265565b610b18565b6005546001600160a01b0316610337565b610234610b7c565b6102716201518081565b610271610b8b565b600654610337906001600160a01b031681565b61025d61041436600461111f565b610bbd565b610271610bcb565b61027160085481565b6102716201437081565b61029a610bfd565b61027161044a36600461127e565b6001600160a01b03918216600090815260016020908152604080832093909416825291909152205490565b61029a610483366004611149565b610c6a565b610271600c5481565b6060600380546104a0906112b1565b80601f01602080910402602001604051908101604052809291908181526020018280546104cc906112b1565b80156105195780601f106104ee57610100808354040283529160200191610519565b820191906000526020600020905b8154815290600101906020018083116104fc57829003601f168201915b5050505050905090565b600033610531818585610cad565b60019150505b92915050565b610545610cbf565b6001600160a01b03811661056c57604051632969679960e11b815260040160405180910390fd5b600680546001600160a01b0319166001600160a01b0392909216919091179055565b60003361059c858285610cec565b6105a7858585610d6a565b506001949350505050565b6105ba610cbf565b6001600160a01b0381166105e157604051632969679960e11b815260040160405180910390fd5b600780546001600160a01b0319166001600160a01b0392909216919091179055565b600080600b54426106149190611301565b905062015180811061062857600091505090565b6106358162015180611301565b91505090565b610643610cbf565b600d544210156106665760405163269576db60e01b815260040160405180910390fd5b80600003610687576040516303ccd49d60e01b815260040160405180910390fd5b6001600160a01b0382166106ae576040516389a4ea1960e01b815260040160405180910390fd5b62015180600b546106bf9190611314565b42106106cf576000600c55610707565b69021e19e0c9bab240000081600c546106e89190611314565b111561070757604051630774b37760e21b815260040160405180910390fd5b69021e19e0c9bab240000081111561073257604051630774b37760e21b815260040160405180910390fd5b61073c8282610dc9565b80600c600082825461074e9190611314565b909155505042600b556040518181526001600160a01b038316907f76dcb19d73dc6c5a49de41d75b9ab52e3d44ca8cd90c330c238bacb4f8b5b4f59060200160405180910390a25050565b6000600854600a54106107ac5750600090565b600a546008546107bc9190611301565b905090565b6006546001600160a01b031633146107ec57604051636093662d60e01b815260040160405180910390fd5b82811461080c5760405163512509d360e11b815260040160405180910390fd5b600083900361082e5760405163a600c81d60e01b815260040160405180910390fd5b606483111561085057604051631e80759560e21b815260040160405180910390fd5b600d544210156108735760405163269576db60e01b815260040160405180910390fd5b6000805b828110156108e65783838281811061089157610891611327565b905060200201356000036108b8576040516303ccd49d60e01b815260040160405180910390fd5b8383828181106108ca576108ca611327565b90506020020135826108dc9190611314565b9150600101610877565b506108f081610e03565b60005b84811015610a1c57600086868381811061090f5761090f611327565b90506020020160208101906109249190611149565b6001600160a01b03160361094b576040516389a4ea1960e01b815260040160405180910390fd5b61099386868381811061096057610960611327565b90506020020160208101906109759190611149565b85858481811061098757610987611327565b90506020020135610dc9565b8585828181106109a5576109a5611327565b90506020020160208101906109ba9190611149565b6001600160a01b03167f4b6dcabdeaeb0ec6121e2e093c11a74bd84844268dc1131fd8ba3b363a82d7e88585848181106109f6576109f6611327565b90506020020135604051610a0c91815260200190565b60405180910390a26001016108f3565b5080600a6000828254610a2f9190611314565b9091555050600e805460ff191660011790555050505050565b610a50610cbf565b610a5a6000610e64565b565b6006546001600160a01b03163314610a8757604051636093662d60e01b815260040160405180910390fd5b600d54421015610aaa57604051631f9618c760e21b815260040160405180910390fd5b600e5460ff16610acd5760405163632150cd60e01b815260040160405180910390fd5b6000600a55426009819055600e805460ff191690556040519081527fb9cecf4f4de9abfb9c14d26ae60e353d6e177707f9179b5937c9baec9fbadfe9906020015b60405180910390a1565b610b20610cbf565b80600003610b4157604051630ced08f560e31b815260040160405180910390fd5b60088190556040518181527fd9e2131a28c9d9de2d1dca598162fa87a666e3007ebf5fb04700450a68a4cff99060200160405180910390a150565b6060600480546104a0906112b1565b600069021e19e0c9bab2400000600c5410610ba65750600090565b600c546107bc9069021e19e0c9bab2400000611301565b600033610531818585610d6a565b60008060095442610bdc9190611301565b9050620143708110610bf057600091505090565b6106358162014370611301565b6007546001600160a01b03163314610c2857604051632ce5db9f60e01b815260040160405180910390fd5b610c354262015180611314565b600d8190556040519081527f38d4174e7163889d8e9bd4aa2078c460fd3a1964ad51aef8de1467ee4b29ae1190602001610b0e565b610c72610cbf565b6001600160a01b038116610ca157604051631e4fbdf760e01b8152600060048201526024015b60405180910390fd5b610caa81610e64565b50565b610cba8383836001610eb6565b505050565b6005546001600160a01b03163314610a5a5760405163118cdaa760e01b8152336004820152602401610c98565b6001600160a01b038381166000908152600160209081526040808320938616835292905220546000198114610d645781811015610d5557604051637dc7a0d960e11b81526001600160a01b03841660048201526024810182905260448101839052606401610c98565b610d6484848484036000610eb6565b50505050565b6001600160a01b038316610d9457604051634b637e8f60e11b815260006004820152602401610c98565b6001600160a01b038216610dbe5760405163ec442f0560e01b815260006004820152602401610c98565b610cba838383610f8b565b6001600160a01b038216610df35760405163ec442f0560e01b815260006004820152602401610c98565b610dff60008383610f8b565b5050565b62014370600954610e149190611314565b421015610e3457604051632ed6564360e21b815260040160405180910390fd5b60085481600a54610e459190611314565b1115610caa57604051635b9b900160e01b815260040160405180910390fd5b600580546001600160a01b038381166001600160a01b0319831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b6001600160a01b038416610ee05760405163e602df0560e01b815260006004820152602401610c98565b6001600160a01b038316610f0a57604051634a1406b160e11b815260006004820152602401610c98565b6001600160a01b0380851660009081526001602090815260408083209387168352929052208290558015610d6457826001600160a01b0316846001600160a01b03167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b92584604051610f7d91815260200190565b60405180910390a350505050565b6001600160a01b038316610fb6578060026000828254610fab9190611314565b909155506110289050565b6001600160a01b038316600090815260208190526040902054818110156110095760405163391434e360e21b81526001600160a01b03851660048201526024810182905260448101839052606401610c98565b6001600160a01b03841660009081526020819052604090209082900390555b6001600160a01b03821661104457600280548290039055611063565b6001600160a01b03821660009081526020819052604090208054820190555b816001600160a01b0316836001600160a01b03167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef836040516110a891815260200190565b60405180910390a3505050565b602081526000825180602084015260005b818110156110e357602081860181015160408684010152016110c6565b506000604082850101526040601f19601f83011684010191505092915050565b80356001600160a01b038116811461111a57600080fd5b919050565b6000806040838503121561113257600080fd5b61113b83611103565b946020939093013593505050565b60006020828403121561115b57600080fd5b61116482611103565b9392505050565b60008060006060848603121561118057600080fd5b61118984611103565b925061119760208501611103565b929592945050506040919091013590565b60008083601f8401126111ba57600080fd5b50813567ffffffffffffffff8111156111d257600080fd5b6020830191508360208260051b85010111156111ed57600080fd5b9250929050565b6000806000806040858703121561120a57600080fd5b843567ffffffffffffffff81111561122157600080fd5b61122d878288016111a8565b909550935050602085013567ffffffffffffffff81111561124d57600080fd5b611259878288016111a8565b95989497509550505050565b60006020828403121561127757600080fd5b5035919050565b6000806040838503121561129157600080fd5b61129a83611103565b91506112a860208401611103565b90509250929050565b600181811c908216806112c557607f821691505b6020821081036112e557634e487b7160e01b600052602260045260246000fd5b50919050565b634e487b7160e01b600052601160045260246000fd5b81810381811115610537576105376112eb565b80820180821115610537576105376112eb565b634e487b7160e01b600052603260045260246000fdfea2646970667358221220001f20b9182fe148aaf344f97bbc78a18321becc55c5894225e9931d8b50ace164736f6c634300081e0033",
   "devdoc": {
     "errors": {
       "ERC20InsufficientAllowance(address,uint256,uint256)": [
@@ -805,51 +1010,54 @@
       "balanceOf(address)": {
         "details": "See {IERC20-balanceOf}."
       },
-      "batchBurn(address[],uint256[])": {
-        "details": "Only the authorized RPC Bread Minter can call this functionUsed for penalty burns or other administrative token removalMaximum batch size is 100 to prevent gas issues",
-        "params": {
-          "addresses": "Array of addresses to burn tokens from",
-          "amounts": "Array of amounts to burn (must match addresses array length)"
-        }
-      },
       "batchMint(address[],uint256[])": {
-        "details": "Only the authorized RPC Bread Minter can call this functionEnforces rate limiting for each recipient and validates all inputsMaximum batch size is 100 to prevent gas issues",
+        "details": "Only the authorized Batch Minter can call this functionEnforces overall rate limiting and validates all inputsMaximum batch size is 100 to prevent gas issues",
         "params": {
           "addresses": "Array of recipient addresses",
           "amounts": "Array of amounts to mint (must match addresses array length)"
         }
       },
+      "completeBatchMintingPeriod()": {
+        "details": "Only the RPC Bread Minter can call this function after minting has occurredBlocked when minting is paused to prevent period reset during emergency"
+      },
       "constructor": {
-        "details": "Mints 100,000 tokens to the contract deployer and sets the initial minter address",
         "params": {
-          "rpcBreadMinterAddress_": "The address authorized to perform batch mint/burn operations"
+          "batchMinterAddress_": "The address authorized to perform batch mint/burn operations",
+          "initialOwner": "The address that will own the contract and receive initial tokens",
+          "pauseAddress_": "The address authorized to pause minting"
         }
       },
       "decimals()": {
         "details": "Returns the number of decimals used to get its user representation. For example, if `decimals` equals `2`, a balance of `505` tokens should be displayed to a user as `5.05` (`505 / 10 ** 2`). Tokens usually opt for a value of 18, imitating the relationship between Ether and Wei. This is the default value returned by this function, unless it's overridden. NOTE: This information is only used for _display_ purposes: it in no way affects any of the arithmetic of the contract, including {IERC20-balanceOf} and {IERC20-transfer}."
       },
-      "getMintedInPeriod(address)": {
-        "params": {
-          "user": "The address to check minted amount for"
-        },
+      "getOwnerMintRemainingCooldown()": {
         "returns": {
-          "_0": "The amount of tokens minted in the current cooldown period (0 if period has reset)"
+          "_0": "The number of seconds remaining in the owner mint cooldown period (0 if cooldown has passed)"
         }
       },
-      "getRemainingCooldown(address)": {
-        "params": {
-          "user": "The address to check cooldown for"
-        },
+      "getRemainingBatchMintAmount()": {
+        "returns": {
+          "_0": "The amount of tokens that can still be batch minted in the current period"
+        }
+      },
+      "getRemainingBatchMintCooldown()": {
         "returns": {
           "_0": "The number of seconds remaining in the cooldown period (0 if cooldown has passed)"
         }
       },
-      "getRemainingMintAmount(address)": {
-        "params": {
-          "user": "The address to check remaining mint amount for"
-        },
+      "getRemainingOwnerMintAmount()": {
         "returns": {
-          "_0": "The amount of tokens that can still be minted (full limit if period has reset)"
+          "_0": "The amount of tokens that can still be owner minted in the current period"
+        }
+      },
+      "getTotalBatchMintedInPeriod()": {
+        "returns": {
+          "_0": "The amount of tokens batch minted in the current period"
+        }
+      },
+      "getTotalOwnerMintedInPeriod()": {
+        "returns": {
+          "_0": "The amount of tokens owner minted in the current period"
         }
       },
       "name()": {
@@ -858,25 +1066,35 @@
       "owner()": {
         "details": "Returns the address of the current owner."
       },
+      "ownerMint(address,uint256)": {
+        "details": "Only the contract owner can call this functionEnforces 24-hour cooldown and owner mint limitRespects global pause functionality",
+        "params": {
+          "amount": "The amount of tokens to mint",
+          "to": "The address to mint tokens to"
+        }
+      },
+      "pauseMinting()": {
+        "details": "Only the pause address can call this function"
+      },
       "renounceOwnership()": {
         "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner."
       },
-      "setMintCooldown(uint256)": {
-        "details": "Only the contract owner can call this function. Cooldown must be greater than 0",
-        "params": {
-          "newCooldown": "The new cooldown period in seconds"
-        }
-      },
-      "setMintLimit(uint256)": {
+      "setBatchMintLimit(uint256)": {
         "details": "Only the contract owner can call this function. Limit must be greater than 0",
         "params": {
           "newLimit": "The new mint limit in wei (with 18 decimals)"
         }
       },
-      "setRpcBreadMinterAddress(address)": {
+      "setBatchMinterAddress(address)": {
         "details": "Only the contract owner can call this function",
         "params": {
           "newAddress": "The new address that will be authorized to perform batch operations"
+        }
+      },
+      "setPauseAddress(address)": {
+        "details": "Only the contract owner can call this function",
+        "params": {
+          "newAddress": "The new address that will be authorized to perform pauses"
         }
       },
       "symbol()": {
@@ -900,29 +1118,44 @@
   "userdoc": {
     "kind": "user",
     "methods": {
-      "batchBurn(address[],uint256[])": {
-        "notice": "Burns tokens from multiple addresses in a single transaction"
-      },
       "batchMint(address[],uint256[])": {
         "notice": "Mints tokens to multiple addresses in a single transaction"
       },
-      "getMintedInPeriod(address)": {
-        "notice": "Returns the amount of tokens minted by a user in the current period"
+      "completeBatchMintingPeriod()": {
+        "notice": "Completes the current batch minting period and resets for the next period"
       },
-      "getRemainingCooldown(address)": {
-        "notice": "Returns the remaining cooldown time for a user before they can mint again"
+      "getOwnerMintRemainingCooldown()": {
+        "notice": "Returns the remaining cooldown time before owner minting can resume"
       },
-      "getRemainingMintAmount(address)": {
-        "notice": "Returns the remaining amount that can be minted by a user in the current period"
+      "getRemainingBatchMintAmount()": {
+        "notice": "Returns the remaining amount that can be batch minted in the current period"
       },
-      "setMintCooldown(uint256)": {
-        "notice": "Sets the cooldown period between mint limit resets"
+      "getRemainingBatchMintCooldown()": {
+        "notice": "Returns the remaining cooldown time before batch minting can resume globally"
       },
-      "setMintLimit(uint256)": {
-        "notice": "Sets the maximum amount that can be minted per cooldown period"
+      "getRemainingOwnerMintAmount()": {
+        "notice": "Returns the remaining amount that can be owner minted in the current period"
       },
-      "setRpcBreadMinterAddress(address)": {
-        "notice": "Updates the RPC Bread Minter address"
+      "getTotalBatchMintedInPeriod()": {
+        "notice": "Returns the amount of tokens batch minted in the current period"
+      },
+      "getTotalOwnerMintedInPeriod()": {
+        "notice": "Returns the amount of tokens owner minted in the current period"
+      },
+      "ownerMint(address,uint256)": {
+        "notice": "Mints tokens to a single address (can be called by owner only)"
+      },
+      "pauseMinting()": {
+        "notice": "Pauses the minting functionality for 24 hours"
+      },
+      "setBatchMintLimit(uint256)": {
+        "notice": "Sets the maximum amount that can be minted per cooldown period globally"
+      },
+      "setBatchMinterAddress(address)": {
+        "notice": "Updates the Batch Minter address"
+      },
+      "setPauseAddress(address)": {
+        "notice": "Updates the address that has pausing privileges"
       }
     },
     "version": 1
@@ -978,44 +1211,76 @@
         "type": "t_address"
       },
       {
-        "astId": 963,
+        "astId": 958,
         "contract": "contracts/BuidlGuidlBread.sol:BuidlGuidlBread",
-        "label": "rpcBreadMinterAddress",
+        "label": "batchMinterAddress",
         "offset": 0,
         "slot": "6",
         "type": "t_address"
       },
       {
-        "astId": 970,
+        "astId": 960,
         "contract": "contracts/BuidlGuidlBread.sol:BuidlGuidlBread",
-        "label": "mintLimit",
+        "label": "pauseAddress",
         "offset": 0,
         "slot": "7",
-        "type": "t_uint256"
+        "type": "t_address"
       },
       {
-        "astId": 973,
+        "astId": 963,
         "contract": "contracts/BuidlGuidlBread.sol:BuidlGuidlBread",
-        "label": "mintCooldown",
+        "label": "batchMintLimit",
         "offset": 0,
         "slot": "8",
         "type": "t_uint256"
       },
       {
-        "astId": 977,
+        "astId": 965,
         "contract": "contracts/BuidlGuidlBread.sol:BuidlGuidlBread",
-        "label": "lastMintTime",
+        "label": "lastBatchMintTime",
         "offset": 0,
         "slot": "9",
-        "type": "t_mapping(t_address,t_uint256)"
+        "type": "t_uint256"
       },
       {
-        "astId": 981,
+        "astId": 967,
         "contract": "contracts/BuidlGuidlBread.sol:BuidlGuidlBread",
-        "label": "mintedInPeriod",
+        "label": "totalBatchMintedInPeriod",
         "offset": 0,
         "slot": "10",
-        "type": "t_mapping(t_address,t_uint256)"
+        "type": "t_uint256"
+      },
+      {
+        "astId": 969,
+        "contract": "contracts/BuidlGuidlBread.sol:BuidlGuidlBread",
+        "label": "lastOwnerMintTime",
+        "offset": 0,
+        "slot": "11",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 971,
+        "contract": "contracts/BuidlGuidlBread.sol:BuidlGuidlBread",
+        "label": "totalOwnerMintedInPeriod",
+        "offset": 0,
+        "slot": "12",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 974,
+        "contract": "contracts/BuidlGuidlBread.sol:BuidlGuidlBread",
+        "label": "pauseEndTime",
+        "offset": 0,
+        "slot": "13",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 976,
+        "contract": "contracts/BuidlGuidlBread.sol:BuidlGuidlBread",
+        "label": "batchMintingOccurredThisPeriod",
+        "offset": 0,
+        "slot": "14",
+        "type": "t_bool"
       }
     ],
     "types": {
@@ -1023,6 +1288,11 @@
         "encoding": "inplace",
         "label": "address",
         "numberOfBytes": "20"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
       },
       "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
         "encoding": "mapping",

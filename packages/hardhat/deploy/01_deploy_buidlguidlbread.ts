@@ -28,7 +28,7 @@ const deployBuidlGuidlBread: DeployFunction = async function (hre: HardhatRuntim
   await deploy("BuidlGuidlBread", {
     from: deployer,
     args: [
-      "0x4dBd522584027518dF620479947aB110d8C998af",
+      "0x8c4f1FB34565650e176d2cd2761B3be10Ca8d35b",
       "0xaC9A4652dF3878d24f35A6a6c022544aeE9748Ff",
       "0x38c772B96D73733F425746bd368B4B4435A37967",
     ], // initialOwner, batchMinterAddress, pauseAddress
